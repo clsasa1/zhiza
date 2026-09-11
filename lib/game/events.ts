@@ -18,7 +18,6 @@ export const EVENTS: GameEvent[] = [
       {
         text: 'Потянуться к ручке',
         effects: { health: -18, stress: 12, addTags: ['trait:shram'] },
-        echo: { eventId: 'echo_trauma_adult', minDelay: 19, maxDelay: 22 },
         logText: 'Ожог от сковороды. Первый шрам и первый страх огня.',
         logKind: 'bad',
       },
@@ -422,6 +421,7 @@ export const EVENTS: GameEvent[] = [
   {
     id: 'echo_car_crash',
     echoOnly: true,
+    forbiddenTags: ['trait:sluzhil'],
     title: 'Тот самый поворот',
     text: 'Снова ночь, снова объездная, снова «десятка» на всю катушку. На повороте фары встречной вырастают слишком быстро.',
     choices: [

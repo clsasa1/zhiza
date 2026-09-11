@@ -11,6 +11,7 @@ import { EVENTS, EVENTS_BY_ID } from './events'
 
 // ─────────────────────────────── Balance constants
 const LIVING_COST_PER_YEAR = 25_000
+const PARENTAL_ALLOWANCE = 20_000
 const DEBT_THRESHOLD = -100_000
 const DEBT_STRESS_PER_YEAR = 10
 const EMPTY_YEAR_CHANCE = 0.35
@@ -131,12 +132,15 @@ function applyPassiveTick(state: LifeState): void {
     0,
   )
 
-  const delta = salary - LIVING_COST_PER_YEAR
+  const parentalAllowance =
+    state.age <= 21 ? PARENTAL_ALLOWANCE : 0
+  const income = salary + parentalAllowance
+  const delta = income - LIVING_COST_PER_YEAR
   state.metrics.money = (state.metrics.money ?? 0) + delta
 
   const netText =
     delta >= 0
-      ? `Год жизни: +${salary.toLocaleString('ru-RU')} ₽ дохода, −${LIVING_COST_PER_YEAR.toLocaleString('ru-RU')} ₽ на жизнь.`
+      ? `Год жизни: +${income.toLocaleString('ru-RU')} ₽ дохода, −${LIVING_COST_PER_YEAR.toLocaleString('ru-RU')} ₽ на жизнь.`
       : `Год жизни: расходы съели ${Math.abs(delta).toLocaleString('ru-RU')} ₽ больше, чем удалось заработать.`
   state.timeline.push({ age: state.age, text: netText, kind: 'neutral' })
 
@@ -210,7 +214,12 @@ function selectEvent(state: LifeState): GameEvent | null {
     const entry = state.echoQueue[dueIndex]
     state.echoQueue.splice(dueIndex, 1)
     const echoEvent = EVENTS_BY_ID[entry.eventId]
-    if (echoEvent) return echoEvent
+    if (
+      echoEvent &&
+      !echoEvent.forbiddenTags?.some((tag) => state.tags.includes(tag))
+    ) {
+      return echoEvent
+    }
   }
 
   // 2. Пустой год (шанс 35%).
