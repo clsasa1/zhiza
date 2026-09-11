@@ -77,6 +77,7 @@ export interface ChoiceEffects {
   social?: number
   money?: number
   addTags?: Tag[]
+  randomTags?: { chance: number; tags: Tag[] }
   removeTags?: Tag[]
   addMemory?: MemoryArtifact
   familyDecayDelta?: number

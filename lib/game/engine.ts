@@ -356,6 +356,11 @@ export function resolveChoice(
   if (eff.addTags) {
     for (const t of eff.addTags) if (!next.tags.includes(t)) next.tags.push(t)
   }
+  if (eff.randomTags && Math.random() < eff.randomTags.chance) {
+    for (const t of eff.randomTags.tags) {
+      if (!next.tags.includes(t)) next.tags.push(t)
+    }
+  }
   if (eff.removeTags) {
     next.tags = next.tags.filter((t) => !eff.removeTags!.includes(t))
   }

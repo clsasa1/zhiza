@@ -411,7 +411,14 @@ export const EVENTS: GameEvent[] = [
     choices: [
       {
         text: 'Согласиться',
-        effects: { money: 70000, stress: 25, social: 8, addTags: ['trait:boss'] },
+        effects: {
+          money: 150000,
+          stress: 25,
+          social: 8,
+          familyDecayDelta: 2,
+          addTags: ['trait:boss'],
+          randomTags: { chance: 0.4, tags: ['status:ulcer'] },
+        },
         logText: 'Теперь ты начальник. Люди стали приходить к тебе с проблемами, которые раньше приносили начальнику.',
         logKind: 'milestone',
       },

@@ -42,6 +42,7 @@ const TAG_LABELS: Record<string, string> = {
   'status:burned_out': 'Выгорание',
   'status:divorced': 'Разведён',
   'status:chronic_illness': 'Хроническое заболевание',
+  'status:ulcer': 'Язва',
   'asset:dacha': 'Дача',
   'asset:car_foreign': 'Иномарка',
   'trait:boss': 'Начальник',
