@@ -17,6 +17,19 @@ export interface Metrics {
   money?: number
 }
 
+export interface MetricCondition {
+  min?: number
+  max?: number
+}
+
+export interface MetricConditions {
+  health?: MetricCondition
+  stress?: MetricCondition
+  intellect?: MetricCondition
+  social?: MetricCondition
+  money?: MetricCondition
+}
+
 export interface EchoEntry {
   targetAge: number
   eventId: string
@@ -70,6 +83,8 @@ export interface GameEvent {
   maxAge?: number
   /** Повседневное событие может выпадать повторно в разные годы. */
   repeatable?: boolean
+  cityTypes?: CityType[]
+  metricConditions?: MetricConditions
   requiredTags?: Tag[]
   forbiddenTags?: Tag[]
   /** If true, this event is only reachable via the echo queue. */

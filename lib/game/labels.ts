@@ -1,5 +1,7 @@
 import type { Tag } from './types'
 
+export type TagCategory = 'trait' | 'status' | 'asset' | 'rel'
+
 // Человекочитаемые подписи для тегов. Неизвестные теги форматируются автоматически.
 const TAG_LABELS: Record<string, string> = {
   'trait:shram': 'Шрам',
@@ -34,6 +36,22 @@ const TAG_LABELS: Record<string, string> = {
   'rel:vitёk_dolzhnik': 'Витёк должник',
   'rel:vitёk_obida': 'Витёк в обиде',
   'rel:pervaya_lyubov': 'Первая любовь',
+  'status:midlife_crisis': 'Кризис среднего возраста',
+  'status:burned_out': 'Выгорание',
+  'status:divorced': 'Разведён',
+  'status:chronic_illness': 'Хроническое заболевание',
+  'asset:dacha': 'Дача',
+  'asset:car_foreign': 'Иномарка',
+  'trait:boss': 'Начальник',
+  'rel:child_born': 'Ребёнок',
+  'rel:parents_ill': 'Родители болеют',
+}
+
+export const CATEGORY_COLORS: Record<TagCategory, string> = {
+  trait: 'border-chart-3/40 text-chart-3',
+  status: 'border-primary/50 text-primary',
+  asset: 'border-chart-4/40 text-chart-4',
+  rel: 'border-chart-5/40 text-chart-5',
 }
 
 export function tagLabel(tag: Tag): string {
@@ -42,6 +60,6 @@ export function tagLabel(tag: Tag): string {
   return raw.replace(/_/g, ' ')
 }
 
-export function tagCategory(tag: Tag): 'trait' | 'status' | 'asset' | 'rel' {
-  return tag.split(':')[0] as 'trait' | 'status' | 'asset' | 'rel'
+export function tagCategory(tag: Tag): TagCategory {
+  return tag.split(':')[0] as TagCategory
 }

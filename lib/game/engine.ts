@@ -10,11 +10,19 @@ import type {
 import { EVENTS, EVENTS_BY_ID } from './events'
 
 // ─────────────────────────────── Balance constants
-const LIVING_COST_PER_YEAR = 25_000
 const PARENTAL_ALLOWANCE = 20_000
 const DEBT_THRESHOLD = -100_000
 const DEBT_STRESS_PER_YEAR = 10
-const MAX_AGE = 30 // Этап 0 покрывает 0–30 лет
+const MAX_AGE = 45
+
+const CITY_RULES: Record<
+  CityType,
+  { livingCost: number; salaryMultiplier: number; stressPerYear: number; healthPerYear: number }
+> = {
+  metropolis: { livingCost: 45_000, salaryMultiplier: 1.4, stressPerYear: 2, healthPerYear: 0 },
+  industrial: { livingCost: 25_000, salaryMultiplier: 1, stressPerYear: 0, healthPerYear: -1 },
+  provincial: { livingCost: 16_000, salaryMultiplier: 0.75, stressPerYear: -2, healthPerYear: 0 },
+}
 
 /** Зарплата в год по тегам занятости. */
 const SALARY_BY_TAG: Partial<Record<Tag, number>> = {
@@ -123,25 +131,24 @@ function applyMetricUnlocks(state: LifeState): void {
 
 // ─────────────────────────────── Passive Tick (с 18 лет)
 function applyPassiveTick(state: LifeState): void {
+  const city = CITY_RULES[state.cityType]
+  state.metrics.stress = clamp(state.metrics.stress + city.stressPerYear)
+  state.metrics.health = clamp(state.metrics.health + city.healthPerYear)
   if (state.age < 18) return
 
   const salary = Object.entries(SALARY_BY_TAG).reduce(
     (sum, [tag, amount]) =>
-      state.tags.includes(tag as Tag) ? sum + (amount ?? 0) : sum,
+      state.tags.includes(tag as Tag)
+        ? sum + Math.round((amount ?? 0) * city.salaryMultiplier)
+        : sum,
     0,
   )
 
   const parentalAllowance =
     state.age <= 21 ? PARENTAL_ALLOWANCE : 0
   const income = salary + parentalAllowance
-  const delta = income - LIVING_COST_PER_YEAR
+  const delta = income - city.livingCost
   state.metrics.money = (state.metrics.money ?? 0) + delta
-
-  const netText =
-    delta >= 0
-      ? `Год жизни: +${income.toLocaleString('ru-RU')} ₽ дохода, −${LIVING_COST_PER_YEAR.toLocaleString('ru-RU')} ₽ на жизнь.`
-      : `Год жизни: расходы съели ${Math.abs(delta).toLocaleString('ru-RU')} ₽ больше, чем удалось заработать.`
-  state.timeline.push({ age: state.age, text: netText, kind: 'neutral' })
 
   // Долговая яма
   if ((state.metrics.money ?? 0) < DEBT_THRESHOLD) {
@@ -164,6 +171,17 @@ function applyPassiveTick(state: LifeState): void {
   }
 }
 
+function applyCriticalStress(state: LifeState): void {
+  if (state.metrics.stress < 100) return
+  state.metrics.health = clamp(state.metrics.health - 35)
+  state.metrics.stress = 75
+  state.timeline.push({
+    age: state.age,
+    text: 'Хроническое выгорание и стресс привели к нервному срыву и госпитализации.',
+    kind: 'bad',
+  })
+}
+
 // ─────────────────────────────── Смерть
 function checkDeath(state: LifeState): boolean {
   if (state.isDead) return true
@@ -180,12 +198,12 @@ function checkDeath(state: LifeState): boolean {
     return true
   }
   if (state.age >= MAX_AGE) {
-    // Конец Этапа 0 — жизнь продолжается за пределами MVP.
+    // Этап 0 заканчивается на 45 годах.
     state.isDead = true
     state.deathReason = `Конец Этапа 0 (MVP): персонаж дожил до ${MAX_AGE} лет`
     state.timeline.push({
       age: state.age,
-      text: 'Тридцать лет позади. Здесь заканчивается Этап 0 — но не сама жизнь.',
+      text: 'Сорок пять лет позади. Здесь заканчивается Этап 0 — но не сама жизнь.',
       kind: 'milestone',
     })
     return true
@@ -194,15 +212,24 @@ function checkDeath(state: LifeState): boolean {
 }
 
 // ─────────────────────────────── Подбор события
-function eventMatches(state: LifeState, ev: GameEvent): boolean {
-  if (ev.echoOnly) return false
+function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boolean {
+  if (ev.echoOnly && !allowEcho) return false
   if (!ev.repeatable && state.seenEvents.includes(ev.id)) return false
   if (ev.minAge !== undefined && state.age < ev.minAge) return false
   if (ev.maxAge !== undefined && state.age > ev.maxAge) return false
+  if (ev.cityTypes && !ev.cityTypes.includes(state.cityType)) return false
   if (ev.requiredTags && !ev.requiredTags.every((t) => state.tags.includes(t)))
     return false
   if (ev.forbiddenTags && ev.forbiddenTags.some((t) => state.tags.includes(t)))
     return false
+  if (ev.metricConditions) {
+    for (const [metric, condition] of Object.entries(ev.metricConditions)) {
+      const value = state.metrics[metric as keyof Metrics]
+      if (value === undefined) return false
+      if (condition?.min !== undefined && value < condition.min) return false
+      if (condition?.max !== undefined && value > condition.max) return false
+    }
+  }
   return true
 }
 
@@ -211,14 +238,12 @@ function selectEvent(state: LifeState): GameEvent | null {
   const dueIndex = state.echoQueue.findIndex((e) => e.targetAge <= state.age)
   if (dueIndex !== -1) {
     const entry = state.echoQueue[dueIndex]
-    state.echoQueue.splice(dueIndex, 1)
     const echoEvent = EVENTS_BY_ID[entry.eventId]
-    if (
-      echoEvent &&
-      !echoEvent.forbiddenTags?.some((tag) => state.tags.includes(tag))
-    ) {
+    if (echoEvent && eventMatches(state, echoEvent, true)) {
+      state.echoQueue.splice(dueIndex, 1)
       return echoEvent
     }
+    entry.targetAge += 1
   }
 
   // Обычное событие из пула. Повторяемые бытовые события не дают годам пропадать.
@@ -226,14 +251,6 @@ function selectEvent(state: LifeState): GameEvent | null {
   if (pool.length === 0) return null
   return pick(pool)
 }
-
-const EMPTY_YEAR_LINES = [
-  'Год прошёл монотонно. Работа, дом, сериалы.',
-  'Ничего не случилось. Просто ещё один оборот вокруг Солнца.',
-  'Год без событий. Сезоны сменяли друг друга за окном.',
-  'Тихий год. Даже вспомнить нечего.',
-  'Год прошёл на автопилоте.',
-]
 
 // ─────────────────────────────── tickYear
 export function tickYear(state: LifeState): {
@@ -247,17 +264,12 @@ export function tickYear(state: LifeState): {
 
   applyMetricUnlocks(next)
   applyPassiveTick(next)
+  applyCriticalStress(next)
 
   if (checkDeath(next)) return { nextState: next, event: null }
 
   const event = selectEvent(next)
-  if (event === null && !next.isDead) {
-    next.timeline.push({
-      age: next.age,
-      text: pick(EMPTY_YEAR_LINES),
-      kind: 'neutral',
-    })
-  } else if (event && !event.echoOnly) {
+  if (event && !event.echoOnly) {
     next.seenEvents.push(event.id)
   }
 

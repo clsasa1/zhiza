@@ -1,14 +1,7 @@
 import type { LifeState } from '@/lib/game/types'
 import { cityLabel } from '@/lib/game/engine'
-import { tagCategory, tagLabel } from '@/lib/game/labels'
+import { CATEGORY_COLORS, tagCategory, tagLabel } from '@/lib/game/labels'
 import { MetricBar } from './metric-bar'
-
-const CATEGORY_STYLE: Record<string, string> = {
-  trait: 'border-chart-3/40 text-chart-3',
-  status: 'border-primary/50 text-primary',
-  asset: 'border-chart-4/40 text-chart-4',
-  rel: 'border-chart-5/40 text-chart-5',
-}
 
 function formatMoney(v: number): string {
   return `${v.toLocaleString('ru-RU')} ₽`
@@ -64,7 +57,7 @@ export function StatsPanel({ state }: { state: LifeState }) {
             <span
               key={tag}
               className={`border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide ${
-                CATEGORY_STYLE[tagCategory(tag)]
+                CATEGORY_COLORS[tagCategory(tag)]
               }`}
             >
               {tagLabel(tag)}

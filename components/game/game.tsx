@@ -102,7 +102,7 @@ function StartScreen({ onStart }: { onStart: () => void }) {
       </h1>
       <p className="mt-4 max-w-sm text-pretty font-mono text-sm leading-relaxed text-muted-foreground">
         Один ход — один год. Ты родишься в случайном городе РФ и проживёшь жизнь
-        от первого крика до тридцати. Каждый выбор оставляет эхо, которое догонит
+        от первого крика до сорока пяти. Каждый выбор оставляет эхо, которое догонит
         тебя годы спустя.
       </p>
       <Button
