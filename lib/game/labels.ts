@@ -24,6 +24,8 @@ const TAG_LABELS: Record<string, string> = {
   'trait:invalidnost': 'Инвалидность',
   'trait:faker': 'Фальшивый фасад',
   'trait:belated_grief': 'Запоздалое горе',
+  'trait:emo': 'Эмо',
+  'asset:tv_stash': 'Запас техники',
   'status:kurit': 'Курит',
   'status:student_budget': 'Студент-бюджетник',
   'status:uklonist': 'Уклонист',

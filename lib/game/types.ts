@@ -8,6 +8,22 @@ export type Tag =
   | `rel:${string}`
 
 export type CityType = 'metropolis' | 'industrial' | 'provincial'
+export type EraId =
+  | 'era_90s'
+  | 'era_2000s_fat'
+  | 'era_2014_crisis'
+  | 'era_pandemic'
+  | 'era_modern'
+
+export interface EraConfig {
+  id: EraId
+  name: string
+  startYear: number
+  endYear: number
+  livingCostMultiplier: number
+  stressPassiveModifier: number
+  ambientEventsPool: string[]
+}
 
 export interface Metrics {
   health: number
@@ -48,6 +64,7 @@ export interface EchoEntry {
 
 export interface TimelineEntry {
   age: number
+  year?: number
   text: string
   /** Visual weight of the entry for the life ribbon. */
   kind?: 'neutral' | 'good' | 'bad' | 'fatal' | 'milestone'
@@ -55,6 +72,8 @@ export interface TimelineEntry {
 
 export interface LifeState {
   age: number
+  birthYear: number
+  currentYear: number
   isDead: boolean
   deathReason?: string
   cityType: CityType
@@ -102,6 +121,8 @@ export interface GameEvent {
   /** Повседневное событие может выпадать повторно в разные годы. */
   repeatable?: boolean
   cityTypes?: CityType[]
+  minYear?: number
+  maxYear?: number
   parentStatuses?: ParentStatus[]
   metricConditions?: MetricConditions
   requiredTags?: Tag[]

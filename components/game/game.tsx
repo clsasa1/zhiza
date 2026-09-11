@@ -67,7 +67,7 @@ export function Game() {
         </div>
 
         <div className="lg:h-[32rem]">
-          <Timeline entries={state.timeline} />
+          <Timeline entries={state.timeline} birthYear={state.birthYear} />
         </div>
       </div>
     </div>

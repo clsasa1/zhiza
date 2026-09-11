@@ -19,7 +19,13 @@ const KIND_TEXT: Record<NonNullable<TimelineEntry['kind']>, string> = {
   milestone: 'text-foreground',
 }
 
-export function Timeline({ entries }: { entries: TimelineEntry[] }) {
+export function Timeline({
+  entries,
+  birthYear,
+}: {
+  entries: TimelineEntry[]
+  birthYear: number
+}) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -47,7 +53,7 @@ export function Timeline({ entries }: { entries: TimelineEntry[] }) {
                 className={`border-l-2 pl-3 ${KIND_ACCENT[kind]}`}
               >
                 <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                  {String(entry.age).padStart(2, '0')} лет
+                  {entry.year ?? birthYear + entry.age} | {String(entry.age).padStart(2, '0')} лет
                 </span>
                 <p className={`text-pretty font-mono text-xs leading-relaxed ${KIND_TEXT[kind]}`}>
                   {entry.text}

@@ -1,5 +1,5 @@
 import type { LifeState } from '@/lib/game/types'
-import { cityLabel } from '@/lib/game/engine'
+import { cityLabel, eraForYear } from '@/lib/game/engine'
 import { CATEGORY_COLORS, tagCategory, tagLabel } from '@/lib/game/labels'
 import { MetricBar } from './metric-bar'
 
@@ -9,6 +9,7 @@ function formatMoney(v: number): string {
 
 export function StatsPanel({ state }: { state: LifeState }) {
   const { metrics } = state
+  const era = eraForYear(state.currentYear)
 
   return (
     <section className="border border-border bg-card">
@@ -18,7 +19,12 @@ export function StatsPanel({ state }: { state: LifeState }) {
             {state.age}
           </span>
           <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            {state.age === 1 ? 'год' : 'лет'}
+            {state.age === 1 ? 'год' : 'лет'} ({state.currentYear} г.)
+          </span>
+        </div>
+        <div className="border-b border-border px-4 py-2">
+          <span className="border border-primary/40 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-primary">
+            [{state.currentYear}] {era.name}
           </span>
         </div>
         <span className="border border-border px-2 py-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">

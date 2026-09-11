@@ -8,6 +8,8 @@ import type {
   ParentStatus,
   Tag,
   TimelineEntry,
+  EraConfig,
+  EraId,
 } from './types'
 import { EVENTS, EVENTS_BY_ID } from './events'
 
@@ -16,6 +18,54 @@ const PARENTAL_ALLOWANCE = 20_000
 const DEBT_THRESHOLD = -100_000
 const DEBT_STRESS_PER_YEAR = 10
 const MAX_AGE = 45
+
+export const ERAS: EraConfig[] = [
+  {
+    id: 'era_90s',
+    name: 'Конец 90-х и рубеж 2000-х',
+    startYear: 1990,
+    endYear: 2004,
+    livingCostMultiplier: 0.7,
+    stressPassiveModifier: 1,
+    ambientEventsPool: ['рынок', 'пейджер', 'dial-up'],
+  },
+  {
+    id: 'era_2000s_fat',
+    name: 'Сытые нулевые',
+    startYear: 2005,
+    endYear: 2013,
+    livingCostMultiplier: 1,
+    stressPassiveModifier: -2,
+    ambientEventsPool: ['ICQ', 'кредит', 'потребительский бум'],
+  },
+  {
+    id: 'era_2014_crisis',
+    name: 'Валютные качели',
+    startYear: 2014,
+    endYear: 2019,
+    livingCostMultiplier: 1.2,
+    stressPassiveModifier: 1,
+    ambientEventsPool: ['курс валют', 'санкции', 'доставка'],
+  },
+  {
+    id: 'era_pandemic',
+    name: 'Пандемия',
+    startYear: 2020,
+    endYear: 2021,
+    livingCostMultiplier: 1.1,
+    stressPassiveModifier: 3,
+    ambientEventsPool: ['маски', 'локдаун', 'удалёнка'],
+  },
+  {
+    id: 'era_modern',
+    name: 'Современность',
+    startYear: 2022,
+    endYear: 2100,
+    livingCostMultiplier: 1.4,
+    stressPassiveModifier: 2,
+    ambientEventsPool: ['маркетплейсы', 'параллельный импорт', 'китайские авто'],
+  },
+]
 
 const CITY_RULES: Record<
   CityType,
@@ -41,6 +91,13 @@ const CITY_LABELS: Record<CityType, string> = {
 
 export function cityLabel(city: CityType): string {
   return CITY_LABELS[city]
+}
+
+export function eraForYear(year: number): EraConfig {
+  return (
+    ERAS.find((era) => year >= era.startYear && year <= era.endYear) ??
+    (year < ERAS[0].startYear ? ERAS[0] : ERAS[ERAS.length - 1])
+  )
 }
 
 // ─────────────────────────────── Helpers
@@ -80,6 +137,7 @@ function cloneState(state: LifeState): LifeState {
 // ─────────────────────────────── Инициализация
 export function createNewLife(): LifeState {
   const cityType = pick<CityType>(['metropolis', 'industrial', 'provincial'])
+  const birthYear = randInt(1990, 2005)
 
   // Базовые характеристики зависят от архетипа города.
   const base: Record<CityType, { health: number; stress: number }> = {
@@ -90,6 +148,8 @@ export function createNewLife(): LifeState {
 
   const state: LifeState = {
     age: 0,
+    birthYear,
+    currentYear: birthYear,
     isDead: false,
     cityType,
     metrics: {
@@ -105,7 +165,8 @@ export function createNewLife(): LifeState {
     timeline: [
       {
         age: 0,
-        text: `Родился в ${CITY_LABELS[cityType].toLowerCase()}. Первый крик, первый вдох, первый счёт в жизни.`,
+        year: birthYear,
+        text: `Родился в ${birthYear} году в ${CITY_LABELS[cityType].toLowerCase()}. Первый крик, первый вдох, первый счёт в жизни.`,
         kind: 'milestone',
       },
     ],
@@ -181,7 +242,10 @@ function addMemory(state: LifeState, memory: MemoryArtifact): void {
 // ─────────────────────────────── Passive Tick (с 18 лет)
 function applyPassiveTick(state: LifeState): void {
   const city = CITY_RULES[state.cityType]
-  state.metrics.stress = clamp(state.metrics.stress + city.stressPerYear)
+  const era = eraForYear(state.currentYear)
+  state.metrics.stress = clamp(
+    state.metrics.stress + city.stressPerYear + era.stressPassiveModifier,
+  )
   state.metrics.health = clamp(state.metrics.health + city.healthPerYear)
   if (state.age < 18) return
 
@@ -196,7 +260,7 @@ function applyPassiveTick(state: LifeState): void {
   const parentalAllowance =
     state.age <= 21 ? PARENTAL_ALLOWANCE : 0
   const income = salary + parentalAllowance
-  const delta = income - city.livingCost
+  const delta = income - Math.round(city.livingCost * era.livingCostMultiplier)
   state.metrics.money = (state.metrics.money ?? 0) + delta
 
   // Долговая яма
@@ -266,6 +330,8 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
   if (!ev.repeatable && state.seenEvents.includes(ev.id)) return false
   if (ev.minAge !== undefined && state.age < ev.minAge) return false
   if (ev.maxAge !== undefined && state.age > ev.maxAge) return false
+  if (ev.minYear !== undefined && state.currentYear < ev.minYear) return false
+  if (ev.maxYear !== undefined && state.currentYear > ev.maxYear) return false
   if (ev.cityTypes && !ev.cityTypes.includes(state.cityType)) return false
   if (ev.parentStatuses && !ev.parentStatuses.includes(state.parentStatus))
     return false
@@ -313,6 +379,7 @@ export function tickYear(state: LifeState): {
   if (next.isDead) return { nextState: next, event: null }
 
   next.age += 1
+  next.currentYear = next.birthYear + next.age
   updateParentStatus(next)
 
   applyMetricUnlocks(next)
