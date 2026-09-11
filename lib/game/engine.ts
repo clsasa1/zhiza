@@ -4,6 +4,8 @@ import type {
   GameEvent,
   LifeState,
   Metrics,
+  MemoryArtifact,
+  ParentStatus,
   Tag,
   TimelineEntry,
 } from './types'
@@ -71,6 +73,7 @@ function cloneState(state: LifeState): LifeState {
     echoQueue: state.echoQueue.map((e) => ({ ...e })),
     timeline: state.timeline.map((t) => ({ ...t })),
     seenEvents: [...state.seenEvents],
+    memories: state.memories.map((memory) => ({ ...memory })),
   }
 }
 
@@ -96,6 +99,9 @@ export function createNewLife(): LifeState {
     tags: [],
     echoQueue: [],
     seenEvents: [],
+    familyDecay: 0,
+    parentStatus: 'healthy',
+    memories: [],
     timeline: [
       {
         age: 0,
@@ -118,6 +124,7 @@ function applyMetricUnlocks(state: LifeState): void {
       kind: 'milestone',
     })
   }
+
   if (keys.includes('social') && state.metrics.social === undefined) {
     state.metrics.social = 50 + randInt(-6, 6)
     state.metrics.money = 0
@@ -127,6 +134,48 @@ function applyMetricUnlocks(state: LifeState): void {
       kind: 'milestone',
     })
   }
+}
+
+function updateParentStatus(state: LifeState): void {
+  if (state.parentStatus === 'healthy' && state.age >= 30) {
+    state.parentStatus = 'aging'
+  }
+  if (
+    state.parentStatus === 'aging' &&
+    state.age >= 38 &&
+    state.metrics.health < 55
+  ) {
+    state.parentStatus = 'ill'
+  }
+}
+
+function queueFamilyEcho(state: LifeState): void {
+  if (
+    state.familyDecay < 5 ||
+    state.parentStatus === 'deceased' ||
+    state.age < 34 ||
+    state.age > 42 ||
+    state.echoQueue.some((entry) => entry.eventId === 'echo_parent_death_alone')
+  ) {
+    return
+  }
+  state.echoQueue.push({
+    targetAge: state.age,
+    eventId: 'echo_parent_death_alone',
+  })
+}
+
+function addMemory(state: LifeState, memory: MemoryArtifact): void {
+  const normalized = {
+    ...memory,
+    age: memory.age || state.age,
+    emotionalWeight: Math.max(1, Math.min(10, memory.emotionalWeight)),
+  }
+  const existing = state.memories.find((item) => item.id === normalized.id)
+  if (existing) return
+  state.memories.push(normalized)
+  state.memories.sort((a, b) => b.emotionalWeight - a.emotionalWeight)
+  if (state.memories.length > 12) state.memories.length = 12
 }
 
 // ─────────────────────────────── Passive Tick (с 18 лет)
@@ -218,6 +267,9 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
   if (ev.minAge !== undefined && state.age < ev.minAge) return false
   if (ev.maxAge !== undefined && state.age > ev.maxAge) return false
   if (ev.cityTypes && !ev.cityTypes.includes(state.cityType)) return false
+  if (ev.parentStatuses && !ev.parentStatuses.includes(state.parentStatus))
+    return false
+  if (ev.parentStatuses && state.familyDecay >= 5 && !allowEcho) return false
   if (ev.requiredTags && !ev.requiredTags.every((t) => state.tags.includes(t)))
     return false
   if (ev.forbiddenTags && ev.forbiddenTags.some((t) => state.tags.includes(t)))
@@ -261,10 +313,15 @@ export function tickYear(state: LifeState): {
   if (next.isDead) return { nextState: next, event: null }
 
   next.age += 1
+  updateParentStatus(next)
 
   applyMetricUnlocks(next)
   applyPassiveTick(next)
   applyCriticalStress(next)
+  if (next.age > 22 && next.lastFamilyActionAge !== next.age - 1) {
+    next.familyDecay = clamp(next.familyDecay + 1, 0, 10)
+  }
+  queueFamilyEcho(next)
 
   if (checkDeath(next)) return { nextState: next, event: null }
 
@@ -302,6 +359,12 @@ export function resolveChoice(
   if (eff.removeTags) {
     next.tags = next.tags.filter((t) => !eff.removeTags!.includes(t))
   }
+  if (eff.familyDecayDelta !== undefined) {
+    next.familyDecay = clamp(next.familyDecay + eff.familyDecayDelta, 0, 10)
+    next.lastFamilyActionAge = next.age
+  }
+  if (eff.addMemory) addMemory(next, eff.addMemory)
+  if (eff.parentStatus) next.parentStatus = eff.parentStatus
 
   const logKind: TimelineEntry['kind'] = eff.fatal
     ? 'fatal'

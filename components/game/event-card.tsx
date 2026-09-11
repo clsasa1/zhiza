@@ -12,7 +12,7 @@ function EffectHint({ choice }: { choice: GameChoice }) {
   push('Инт', e.intellect)
   push('Соц', e.social)
   push('₽', e.money)
-  if (e.echo || choice.echo) parts.push('эхо…')
+  if (choice.echo) parts.push('эхо…')
   if (e.fatal) parts.push('РИСК СМЕРТИ')
   if (parts.length === 0) return null
   return (

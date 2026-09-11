@@ -30,6 +30,16 @@ export interface MetricConditions {
   money?: MetricCondition
 }
 
+export type ParentStatus = 'healthy' | 'aging' | 'ill' | 'deceased'
+
+export interface MemoryArtifact {
+  age: number
+  id: string
+  text: string
+  category: 'family' | 'regret' | 'youth' | 'triumph'
+  emotionalWeight: number
+}
+
 export interface EchoEntry {
   targetAge: number
   eventId: string
@@ -54,6 +64,10 @@ export interface LifeState {
   timeline: TimelineEntry[]
   /** Уже сыгранные обычные события — чтобы они не повторялись. */
   seenEvents: string[]
+  familyDecay: number
+  parentStatus: ParentStatus
+  memories: MemoryArtifact[]
+  lastFamilyActionAge?: number
 }
 
 export interface ChoiceEffects {
@@ -64,6 +78,9 @@ export interface ChoiceEffects {
   money?: number
   addTags?: Tag[]
   removeTags?: Tag[]
+  addMemory?: MemoryArtifact
+  familyDecayDelta?: number
+  parentStatus?: ParentStatus
   /** Marks the choice as immediately fatal. */
   fatal?: boolean
   deathReason?: string
@@ -84,6 +101,7 @@ export interface GameEvent {
   /** Повседневное событие может выпадать повторно в разные годы. */
   repeatable?: boolean
   cityTypes?: CityType[]
+  parentStatuses?: ParentStatus[]
   metricConditions?: MetricConditions
   requiredTags?: Tag[]
   forbiddenTags?: Tag[]
