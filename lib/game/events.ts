@@ -439,6 +439,95 @@ export const EVENTS: GameEvent[] = [
       },
     ],
   },
+  // ─────────────────────────────── Повседневные события: повторяются
+  {
+    id: 'daily_childhood',
+    minAge: 0,
+    maxAge: 6,
+    repeatable: true,
+    title: 'Обычный день',
+    text: 'Игрушки разбросаны по комнате, взрослые заняты своими делами. День просит маленького решения.',
+    choices: [
+      {
+        text: 'Пойти играть во двор',
+        effects: { health: 2, stress: -5 },
+        logText: 'Набегался во дворе и вернулся домой только к ужину.',
+        logKind: 'good',
+      },
+      {
+        text: 'Остаться дома и заняться своим делом',
+        effects: { stress: -3, intellect: 2 },
+        logText: 'Тихий день дома. Нашёл занятие и никому не мешал.',
+        logKind: 'neutral',
+      },
+    ],
+  },
+  {
+    id: 'daily_school',
+    minAge: 7,
+    maxAge: 13,
+    repeatable: true,
+    title: 'Школьный день',
+    text: 'Уроки закончились, но до дома ещё далеко. Есть время выбрать, чем заняться после звонка.',
+    choices: [
+      {
+        text: 'Засесть за домашку',
+        effects: { intellect: 3, stress: 3 },
+        logText: 'Разобрался с уроками раньше остальных и освободил вечер.',
+        logKind: 'good',
+      },
+      {
+        text: 'Сбежать к друзьям',
+        effects: { social: 3, stress: -5, intellect: -1 },
+        logText: 'Домашка подождёт. Вечер прошёл в разговорах и смехе.',
+        logKind: 'neutral',
+      },
+    ],
+  },
+  {
+    id: 'daily_teen',
+    minAge: 14,
+    maxAge: 17,
+    repeatable: true,
+    title: 'После школы',
+    text: 'До дома ехать несколько остановок. В телефоне новые сообщения, а в голове — планы на вечер.',
+    choices: [
+      {
+        text: 'Встретиться с друзьями',
+        effects: { social: 4, stress: -4 },
+        logText: 'Погулял с друзьями и узнал последние новости района.',
+        logKind: 'good',
+      },
+      {
+        text: 'Подработать или заняться делами',
+        effects: { money: 5000, stress: 5, intellect: 1 },
+        logText: 'Вечер ушёл на дела. Небольшие деньги, зато полезный опыт.',
+        logKind: 'neutral',
+      },
+    ],
+  },
+  {
+    id: 'daily_adult',
+    minAge: 18,
+    maxAge: 30,
+    repeatable: true,
+    title: 'Обычный взрослый день',
+    text: 'Работа закончилась, но город ещё не спит. Можно потратить вечер на себя или на то, что давно откладывал.',
+    choices: [
+      {
+        text: 'Выйти прогуляться',
+        effects: { health: 2, stress: -5, social: 1 },
+        logText: 'Прошёл несколько кварталов пешком. Голова проветрилась.',
+        logKind: 'good',
+      },
+      {
+        text: 'Остаться дома и восстановиться',
+        effects: { health: 1, stress: -3 },
+        logText: 'Отложил дела и дал себе нормально отдохнуть.',
+        logKind: 'neutral',
+      },
+    ],
+  },
 ]
 
 export const EVENTS_BY_ID: Record<string, GameEvent> = Object.fromEntries(

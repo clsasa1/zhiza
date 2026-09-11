@@ -68,6 +68,8 @@ export interface GameEvent {
   id: string
   minAge?: number
   maxAge?: number
+  /** Повседневное событие может выпадать повторно в разные годы. */
+  repeatable?: boolean
   requiredTags?: Tag[]
   forbiddenTags?: Tag[]
   /** If true, this event is only reachable via the echo queue. */

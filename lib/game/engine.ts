@@ -14,7 +14,6 @@ const LIVING_COST_PER_YEAR = 25_000
 const PARENTAL_ALLOWANCE = 20_000
 const DEBT_THRESHOLD = -100_000
 const DEBT_STRESS_PER_YEAR = 10
-const EMPTY_YEAR_CHANCE = 0.35
 const MAX_AGE = 30 // Этап 0 покрывает 0–30 лет
 
 /** Зарплата в год по тегам занятости. */
@@ -197,7 +196,7 @@ function checkDeath(state: LifeState): boolean {
 // ─────────────────────────────── Подбор события
 function eventMatches(state: LifeState, ev: GameEvent): boolean {
   if (ev.echoOnly) return false
-  if (state.seenEvents.includes(ev.id)) return false
+  if (!ev.repeatable && state.seenEvents.includes(ev.id)) return false
   if (ev.minAge !== undefined && state.age < ev.minAge) return false
   if (ev.maxAge !== undefined && state.age > ev.maxAge) return false
   if (ev.requiredTags && !ev.requiredTags.every((t) => state.tags.includes(t)))
@@ -222,10 +221,7 @@ function selectEvent(state: LifeState): GameEvent | null {
     }
   }
 
-  // 2. Пустой год (шанс 35%).
-  if (Math.random() < EMPTY_YEAR_CHANCE) return null
-
-  // 3. Обычное событие из пула.
+  // Обычное событие из пула. Повторяемые бытовые события не дают годам пропадать.
   const pool = EVENTS.filter((ev) => eventMatches(state, ev))
   if (pool.length === 0) return null
   return pick(pool)
