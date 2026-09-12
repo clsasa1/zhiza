@@ -171,13 +171,14 @@ export function createNewLife(options?: {
   birthEra?: BirthEraId
   birthYear?: number
   cityType?: CityType
+  familyBackground?: FamilyBackground
 }): LifeState {
   const birthEra = options?.birthEra ?? 'perestroika'
   const cityType = options?.cityType ?? pick<CityType>(['metropolis', 'industrial', 'provincial'])
   const birthYear = options?.birthYear ?? (
     birthEra === 'perestroika' ? randInt(1985, 1988) : BIRTH_YEAR_BY_ERA[birthEra]
   )
-  const familyBackground = pick<FamilyBackground>([
+  const familyBackground = options?.familyBackground ?? pick<FamilyBackground>([
     'working_class',
     'intelligentsia',
     'single_mother',

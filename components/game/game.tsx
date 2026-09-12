@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import type { BirthEraId, CityType, GameChoice, GameEvent, LifeState } from '@/lib/game/types'
+import type { BirthEraId, CityType, FamilyBackground, GameChoice, GameEvent, LifeState } from '@/lib/game/types'
 import { createNewLife, resolveChoice, tickYear } from '@/lib/game/engine'
 import { StatsPanel } from './stats-panel'
 import { EventCard } from './event-card'
@@ -13,8 +13,8 @@ export function Game() {
   const [state, setState] = useState<LifeState | null>(null)
   const [pendingEvent, setPendingEvent] = useState<GameEvent | null>(null)
 
-  const start = useCallback((birthEra: BirthEraId, cityType: CityType) => {
-    setState(createNewLife({ birthEra, cityType }))
+  const start = useCallback((birthEra: BirthEraId, cityType: CityType, birthYear: number, familyBackground: FamilyBackground) => {
+    setState(createNewLife({ birthEra, birthYear, cityType, familyBackground }))
     setPendingEvent(null)
   }, [])
 
@@ -44,7 +44,7 @@ export function Game() {
     return (
       <DeathScreen
         state={state}
-        onRestart={() => start('perestroika', 'metropolis')}
+        onRestart={() => start('perestroika', 'metropolis', 1986, 'working_class')}
       />
     )
   }
@@ -101,20 +101,11 @@ function IdleCard({ state }: { state: LifeState }) {
 function StartScreen({
   onStart,
 }: {
-  onStart: (birthEra: BirthEraId, cityType: CityType) => void
+  onStart: (birthEra: BirthEraId, cityType: CityType, birthYear: number, familyBackground: FamilyBackground) => void
 }) {
-  const [birthEra, setBirthEra] = useState<BirthEraId>('perestroika')
-  const [cityType, setCityType] = useState<CityType>('metropolis')
-  const eras: Array<{ id: BirthEraId; years: string; title: string; text: string }> = [
-    { id: 'perestroika', years: '1985–1988', title: 'Перестройка и 90-е на дворе', text: 'Картриджи, рынок и сытые нулевые в юности.' },
-    { id: 'early_nineties', years: '1993', title: 'Рынок вместо стабильности', text: 'Дефолт в детстве, первые деньги в лихие годы.' },
-    { id: 'late_nineties', years: '1998', title: 'На пороге цифровой жизни', text: 'Двор, пейджер и взросление вместе с интернетом.' },
-  ]
-  const cities: Array<{ id: CityType; title: string; text: string }> = [
-    { id: 'metropolis', title: 'Миллионник', text: 'Возможностей больше, аренда кусается.' },
-    { id: 'industrial', title: 'Моногород', text: 'Завод рядом, здоровье и переезд дороже.' },
-    { id: 'provincial', title: 'ПГТ и глубинка', text: 'Дешевле жить, сложнее найти выход.' },
-  ]
+  const [fate, setFate] = useState(() => rollFate())
+  const cityLabels: Record<CityType, string> = { metropolis: 'Миллионник', industrial: 'Моногород', provincial: 'Глубинка / ПГТ' }
+  const familyLabels: Record<FamilyBackground, string> = { working_class: 'работяги', intelligentsia: 'интеллигенция', single_mother: 'мать-одиночка', commercial: 'коммерческая семья' }
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col items-center border border-border bg-card px-8 py-12 text-center">
       <span className="font-mono text-[11px] uppercase tracking-[0.4em] text-primary">
@@ -124,51 +115,44 @@ function StartScreen({
         ЖИЗА
       </h1>
       <p className="mt-4 max-w-sm text-pretty font-mono text-sm leading-relaxed text-muted-foreground">
-        Один ход — один год. Выбери исходную эпоху и место, а затем проживи жизнь
-        от первого крика до семидесяти пяти. Каждый выбор оставляет эхо, которое догонит
-        тебя годы спустя.
+        Один ход — один год. Место рождения не выбирают. Каждый выбор оставляет эхо,
+        которое догонит тебя годы спустя.
       </p>
-      <div className="mt-8 w-full text-left">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Эпоха рождения</span>
-        <div className="mt-2 grid gap-2">
-          {eras.map((era) => (
-            <button
-              key={era.id}
-              type="button"
-              onClick={() => setBirthEra(era.id)}
-              className={`cursor-pointer border px-4 py-3 text-left transition-all duration-200 ease-out ${
-                birthEra === era.id ? 'border-primary bg-primary/10' : 'border-border hover:border-zinc-500 hover:bg-zinc-800/80'
-              }`}
-            >
-              <span className="block font-mono text-xs text-foreground">{era.years} · {era.title}</span>
-              <span className="mt-1 block font-mono text-[11px] text-muted-foreground">{era.text}</span>
-            </button>
-          ))}
-        </div>
-        <span className="mt-6 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Город детства</span>
-        <div className="mt-2 grid gap-2">
-          {cities.map((city) => (
-            <button
-              key={city.id}
-              type="button"
-              onClick={() => setCityType(city.id)}
-              className={`cursor-pointer border px-4 py-3 text-left transition-all duration-200 ease-out ${
-                cityType === city.id ? 'border-primary bg-primary/10' : 'border-border hover:border-zinc-500 hover:bg-zinc-800/80'
-              }`}
-            >
-              <span className="block font-mono text-xs text-foreground">{city.title}</span>
-              <span className="mt-1 block font-mono text-[11px] text-muted-foreground">{city.text}</span>
-            </button>
-          ))}
-        </div>
+      <div className="mt-8 w-full border border-primary/50 bg-primary/5 px-5 py-6 text-left">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-primary">Твой билет</span>
+        <h2 className="mt-2 font-sans text-2xl font-bold uppercase text-foreground">{fate.year} год, {cityLabels[fate.cityType]}</h2>
+        <p className="mt-3 font-mono text-sm leading-relaxed text-muted-foreground">{fate.punch}</p>
+        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">Семья: {familyLabels[fate.familyBackground]}</p>
       </div>
       <Button
-        onClick={() => onStart(birthEra, cityType)}
+        onClick={() => onStart(fate.birthEra, fate.cityType, fate.year, fate.familyBackground)}
         size="lg"
         className="mt-8 w-full font-mono uppercase tracking-[0.2em]"
       >
-        Начать жизнь
+        РОДИТЬСЯ В ЭТОТ МИР
       </Button>
+      <button type="button" onClick={() => setFate(rollFate())} className="mt-4 cursor-pointer font-mono text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground">Смухлевать / Бросить кубик заново</button>
+      <span className="mt-2 font-mono text-[10px] text-muted-foreground">Родину не выбирают, но если очень страшно — крути еще</span>
     </div>
   )
+}
+
+type Fate = { year: number; birthEra: BirthEraId; cityType: CityType; familyBackground: FamilyBackground; punch: string }
+
+function rollFate(): Fate {
+  const year = weightedPick([1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998], [1, 4, 4, 4, 3, 3, 3, 3, 4, 3, 2, 2, 2, 2])
+  const cityType = weightedPick<CityType>(['metropolis', 'industrial', 'provincial'], [30, 45, 25])
+  const familyBackground = weightedPick<FamilyBackground>(['working_class', 'intelligentsia', 'single_mother'], [45, 30, 25])
+  const punch = cityType === 'provincial' && year === 1986 ? 'За окном дымит труба котельной, в серванте стоят хрустальные рюмки, а в стране медленно начинается перестройка.' : cityType === 'metropolis' && year === 1993 ? 'Рынок шумит прямо под окнами пятиэтажки, доллар растёт, но здесь хотя бы есть за что зацепиться.' : cityType === 'industrial' ? 'За стеной гудит завод, в подъезде пахнет углём. Здесь работу обещают раньше, чем свободу.' : cityType === 'provincial' ? 'Автобус ходит два раза в день, новости приходят от соседей. До большого мира сначала нужно доехать.' : 'Пятиэтажки тянутся до горизонта. Здесь тесно, дорого и всё же есть куда податься.'
+  return { year, birthEra: year <= 1992 ? 'perestroika' : year <= 1997 ? 'early_nineties' : 'late_nineties', cityType, familyBackground, punch }
+}
+
+function weightedPick<T>(items: T[], weights: number[]): T {
+  const total = weights.reduce((sum, weight) => sum + weight, 0)
+  let roll = Math.random() * total
+  for (let i = 0; i < items.length; i += 1) {
+    roll -= weights[i]
+    if (roll < 0) return items[i]
+  }
+  return items[items.length - 1]
 }
