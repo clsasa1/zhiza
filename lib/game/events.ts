@@ -1,4 +1,12 @@
-import type { GameEvent } from './types'
+import type { GameEvent, LifeState } from './types'
+
+function getCareerPhrase(state: LifeState): string {
+  if (state.tags.includes('status:job_business') || state.tags.includes('status:delivery_business')) return 'и у тебя своё дело'
+  if (state.tags.includes('status:boss') || state.tags.some((tag) => tag.includes('начальник'))) return 'и под твоим началом целая смена людей'
+  if (state.tags.includes('status:job_factory')) return 'и ты сам уже старший на производстве'
+  if (state.tags.includes('status:freelance')) return 'и ты днями сидишь за своими мониторами'
+  return 'и ты уже взрослый самостоятельный мужик'
+}
 
 // Connected event database for ages 0–30.
 // Several chains demonstrate the echo mechanic:
@@ -1029,7 +1037,6 @@ export const EVENTS: GameEvent[] = [
     weight: 1,
     minAge: 7,
     maxAge: 6,
-    repeatable: true,
     title: 'Обычный день',
     text: 'Игрушки разбросаны по комнате, взрослые заняты своими делами. День просит маленького решения.',
     choices: [
@@ -2206,30 +2213,30 @@ export const EVENTS: GameEvent[] = [
     text: (state) => {
       const ending =
         state.age < 30
-          ? 'даже когда тебе уже под тридцать и у тебя своё дело.'
+          ? `даже когда тебе уже под тридцать ${getCareerPhrase(state)}.`
           : state.age < 40
-            ? 'даже когда тебе уже за тридцать.'
-            : 'даже когда у самого уже седина на висках.'
+            ? `даже когда тебе уже за тридцать ${getCareerPhrase(state)}.`
+            : `даже когда у самого уже седина на висках, а ${getCareerPhrase(state).replace(/^и /, '')}.`
       return `Для неё ты всегда девятилетний. Она накладывает добавку, суёт в карман свернутую тысячную и спрашивает, надел ли ты шапку, ${ending}`
     },
     choices: [
       {
-        text: 'Остаться на чай',
-        effects: { stress: -6, familyDecayDelta: -2, addMemory: { age: 0, id: 'mothers_hat', text: 'Мамина рука в кармане и привычный вопрос про шапку.', category: 'family', emotionalWeight: 7 } },
-        logText: 'Чай остыл, пока мама рассказывала новости соседей. Уходить не хотелось.',
+        text: 'Мягко перехватить её руку и незаметно положить в сервант 10 000 ₽',
+        effects: { money: -10000, stress: -5, familyDecayDelta: -2 },
+        logText: 'Деньги не взял, а перед уходом спрятал пятитысячные за хрусталь в серванте. Вечером мама звонила ругаться, но в голосе звенели слёзы.',
         logKind: 'good',
       },
       {
-        text: 'Взять деньги и уехать по делам',
-        effects: { money: 1000, familyDecayDelta: 1, stress: 3 },
-        logText: 'Купюра осталась в кармане. Мамино «береги себя» — в подъезде.',
+        text: 'Вздохнуть, доесть остывающее пюре и подробно рассказать, как прошёл месяц',
+        effects: { stress: -10, familyDecayDelta: -3 },
+        logText: 'Просидел на кухне три часа, слушая про давление и соседей. На душе стало непривычно спокойно.',
         logKind: 'neutral',
       },
       {
-        text: 'Позвонить вечером',
-        effects: { familyDecayDelta: -1, social: 3 },
-        logText: 'Она спросила, надел ли ты шапку. Ты ответил, что да.',
-        logKind: 'good',
+        text: 'Раздражённо отмахнуться: «Мам, убери, я сам зарабатываю!» — и уткнуться в рабочий чат',
+        effects: { stress: 10, familyDecayDelta: 2 },
+        logText: 'Огрызнулся на её заботу, торопясь закрыть рабочие вопросы. Она молча убрала купюру обратно в кошелёк с оторванным уголком.',
+        logKind: 'bad',
       },
     ],
   },
