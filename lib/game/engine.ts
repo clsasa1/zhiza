@@ -242,10 +242,22 @@ function queueFamilyEcho(state: LifeState): void {
   ) {
     return
   }
+
   state.echoQueue.push({
     targetAge: state.age,
     eventId: 'echo_parent_death_alone',
   })
+}
+
+function queueHistoricalEchoes(state: LifeState): void {
+  if (state.currentYear !== 2020) return
+  const eventId = state.tags.includes('status:freelance') || state.tags.includes('status:delivery_business')
+    ? 'echo_lockdown_delivery'
+    : state.tags.includes('status:job_business')
+      ? 'echo_lockdown_cash_gap'
+      : undefined
+  if (!eventId || state.lastEventAges[eventId] !== undefined) return
+  state.echoQueue.push({ targetAge: state.age, eventId })
 }
 
 function addMemory(state: LifeState, memory: MemoryArtifact): void {
@@ -378,6 +390,7 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
   if (ev.maxAge !== undefined && state.age > ev.maxAge) return false
   if (ev.minYear !== undefined && state.currentYear < ev.minYear) return false
   if (ev.maxYear !== undefined && state.currentYear > ev.maxYear) return false
+  if (ev.seasons && !ev.seasons.includes(state.season)) return false
   if (ev.cityTypes && !ev.cityTypes.includes(state.cityType)) return false
   if (ev.parentStatuses && !ev.parentStatuses.includes(state.parentStatus))
     return false
@@ -412,6 +425,32 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
 }
 
 function selectEvent(state: LifeState): GameEvent | null {
+  const presentEvent = (event: GameEvent): GameEvent =>
+    state.metrics.stress >= 90
+      ? {
+          ...event,
+          choices: event.panicChoices ?? [
+            {
+              text: 'Сорваться на близких',
+              effects: { stress: 8, social: -10, familyDecayDelta: 2 },
+              logText: 'Слова вылетели раньше, чем ты успел их остановить.',
+              logKind: 'bad',
+            },
+            {
+              text: 'Напиться до беспамятства',
+              effects: { health: -6, stress: -12, addTags: ['status:pyet'] },
+              logText: 'Утро началось с сухого рта и выключенного телефона.',
+              logKind: 'bad',
+            },
+            {
+              text: 'Запереться в ванной и выключить телефон',
+              effects: { stress: 4, social: -6 },
+              logText: 'Плитка была холодной. Мир снаружи подождал за дверью.',
+              logKind: 'neutral',
+            },
+          ],
+        }
+      : event
   // 1. Приоритет — эхо-события, чей targetAge совпал.
   const dueIndex = state.echoQueue.findIndex((e) => e.targetAge <= state.age)
   if (dueIndex !== -1) {
@@ -440,9 +479,10 @@ function selectEvent(state: LifeState): GameEvent | null {
   let roll = Math.random() * total
   for (const item of weighted) {
     roll -= item.weight
-    if (roll < 0) return item.event
+    if (roll < 0)         return presentEvent(item.event)
   }
-  return weighted[weighted.length - 1].event
+  const selected = weighted[weighted.length - 1].event
+  return presentEvent(selected)
 }
 
 // ─────────────────────────────── tickYear
@@ -465,12 +505,15 @@ export function tickYear(state: LifeState): {
     next.familyDecay = clamp(next.familyDecay + 1, 0, 10)
   }
   queueFamilyEcho(next)
+  queueHistoricalEchoes(next)
 
   if (checkDeath(next)) return { nextState: next, event: null }
 
   const event = selectEvent(next)
   if (event && !event.echoOnly) {
     next.seenEvents.push(event.id)
+    next.lastEventAges[event.id] = next.age
+  } else if (event) {
     next.lastEventAges[event.id] = next.age
   }
 
@@ -510,6 +553,11 @@ export function resolveChoice(
   }
   if (eff.removeTags) {
     next.tags = next.tags.filter((t) => !eff.removeTags!.includes(t))
+  }
+  if (eff.addTags?.includes('status:breakup') || eff.addTags?.includes('status:divorced')) {
+    next.tags = next.tags.filter(
+      (tag) => !tag.startsWith('rel:') || tag === 'rel:child_born',
+    )
   }
   if (eff.familyDecayDelta !== undefined) {
     next.familyDecay = clamp(next.familyDecay + eff.familyDecayDelta, 0, 10)

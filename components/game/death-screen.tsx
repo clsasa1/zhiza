@@ -87,17 +87,56 @@ export function DeathScreen({
 }
 
 function getKeyTrace(state: LifeState): string {
+  const money = state.metrics.money ?? 0
+  const social = state.metrics.social ?? 0
+  const memories = state.memories
+  const youthMemories = memories.filter((memory) => memory.category === 'youth').length
+
+  if (money >= 150_000 && state.metrics.stress >= 75) {
+    return 'Человек, который всю жизнь копил на потом, но «потом» так и не наступило.'
+  }
+  if (social >= 70 && state.familyDecay <= 2) {
+    return 'Тот, кто умел быть рядом, даже когда вокруг рушился мир.'
+  }
+  if (memories.length === 0) {
+    return 'Очередная тень в переходе: пришёл ниоткуда, ушёл в никуда, не оставив после себя даже долгов.'
+  }
+  if (
+    state.tags.includes('trait:boevoy') &&
+    (state.tags.includes('status:uklonist') || state.age < 30)
+  ) {
+    return 'Вечный бунтарь, сломавший зубы о бетонную стену обстоятельств.'
+  }
+  if (youthMemories >= 2 && state.birthYear <= 1988) {
+    return 'Тот, чья молодость так и осталась согрета кострами за гаражами в 90-х.'
+  }
+  if (
+    (state.tags.includes('status:job_business') || state.tags.includes('trait:boss')) &&
+    social < 35 &&
+    (state.tags.includes('status:divorced') || state.familyDecay >= 5)
+  ) {
+    return 'Строитель чужого счастья, забывший построить своё собственное.'
+  }
+  if (
+    state.tags.includes('status:ipoteka') &&
+    (state.tags.includes('status:ulcer') || state.tags.includes('status:debt_hole'))
+  ) {
+    return 'Человек, променявший живую жизнь на стопку оплаченных квитанций.'
+  }
+  if (state.birthYear <= 1988 && state.metrics.money !== undefined && state.metrics.money < 0) {
+    return 'Свидетель великих строек и больших надежд, растерявший всё в мутной воде перемен.'
+  }
+  if (state.tags.includes('trait:belated_grief') || state.parentStatus === 'deceased') {
+    return 'Тот, кто искренне пытался быть хорошим сыном, но вечно опаздывал на поезд.'
+  }
+  if (state.tags.includes('rel:child_born') && state.familyDecay <= 2) {
+    return 'Тихий труженик, чьё тепло навсегда останется в детских ладонях.'
+  }
   if (state.tags.includes('trait:boss')) {
     return 'Человек, который построил надёжный гараж, но так и не решился сказать главное.'
   }
-  if (state.tags.includes('trait:belated_grief')) {
-    return 'Человек, который слишком поздно приехал по адресу из старого конверта.'
-  }
   if (state.tags.includes('asset:kvartira')) {
     return `Человек, у которого осталась ${tagLabel('asset:kvartira').toLowerCase()}.`
-  }
-  if (state.tags.includes('rel:child_born')) {
-    return 'Человек, который оставил после себя голос в соседней комнате.'
   }
   return 'Человек, который до последнего пытался успеть всё.'
 }

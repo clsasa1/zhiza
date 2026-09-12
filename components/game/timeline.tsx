@@ -30,7 +30,7 @@ export function Timeline({
 
   useEffect(() => {
     const el = scrollRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (el) el.scrollTop = 0
   }, [entries.length])
 
   return (
@@ -45,7 +45,7 @@ export function Timeline({
         className="flex-1 overflow-y-auto px-4 py-3"
       >
         <ol className="flex flex-col gap-2.5">
-          {entries.map((entry, i) => {
+          {entries.slice().reverse().map((entry, i) => {
             const kind = entry.kind ?? 'neutral'
             return (
               <li

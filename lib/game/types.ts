@@ -134,6 +134,7 @@ export interface GameEvent {
   /** Повседневное событие может выпадать повторно в разные годы. */
   repeatable?: boolean
   weight?: number
+  seasons?: Season[]
   cityTypes?: CityType[]
   minYear?: number
   maxYear?: number
@@ -144,6 +145,7 @@ export interface GameEvent {
   conditionAny?: Array<{ requiredTags?: Tag[]; metricConditions?: MetricConditions }>
   familyBackgrounds?: FamilyBackground[]
   lifePaths?: LifePath[]
+  panicChoices?: GameChoice[]
   forbiddenTags?: Tag[]
   /** If true, this event is only reachable via the echo queue. */
   echoOnly?: boolean
