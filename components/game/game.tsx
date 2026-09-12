@@ -9,7 +9,7 @@ import { EventCard } from './event-card'
 import { Timeline } from './timeline'
 import { DeathScreen } from './death-screen'
 import { AudioController } from '@/components/audio-controller'
-import { audioManager } from '@/lib/audio/sound-manager'
+import { audioManager, type AudioTrackKey } from '@/lib/audio/sound-manager'
 
 export function Game() {
   const [state, setState] = useState<LifeState | null>(null)
@@ -17,9 +17,11 @@ export function Game() {
   const [audioStarted, setAudioStarted] = useState(false)
 
   const start = useCallback((birthEra: BirthEraId, cityType: CityType, birthYear: number, familyBackground: FamilyBackground) => {
-    audioManager.playTrack('intro')
+    const nextState = createNewLife({ birthEra, birthYear, cityType, familyBackground })
+    audioManager.init()
+    audioManager.playTrack(trackForState(nextState))
     setAudioStarted(true)
-    setState(createNewLife({ birthEra, birthYear, cityType, familyBackground }))
+    setState(nextState)
     setPendingEvent(null)
   }, [])
 
@@ -50,6 +52,13 @@ export function Game() {
         <StartScreen onStart={start} />
       </>
     )
+  }
+
+  function trackForState(state: LifeState): AudioTrackKey {
+    if (state.age >= 55) return 'oldage'
+    if (state.currentYear < 2000) return 'era_90s'
+    if (state.currentYear <= 2014) return 'era_2000s'
+    return 'era_modern'
   }
 
   if (state.isDead) {

@@ -27,13 +27,21 @@ class AudioManager {
   }
 
   playTrack(key: AudioTrackKey): void {
-    if (this.currentKey === key && this.currentTrack?.playing()) return
+    if (this.currentKey === key && this.currentTrack) {
+      if (!this.muted && !this.currentTrack.playing()) this.currentTrack.play()
+      return
+    }
 
     const nextTrack = new Howl({
       src: [this.tracks[key]],
       html5: true,
       loop: true,
       volume: 0,
+      onload: () => {
+        if (this.currentTrack !== nextTrack || this.muted) return
+        nextTrack.play()
+        nextTrack.fade(0, this.volume, 2000)
+      },
       onloaderror: (_id, error) => {
         console.warn(`Ambient track unavailable: ${this.tracks[key]}`, error)
       },
@@ -51,7 +59,7 @@ class AudioManager {
     this.currentTrack = nextTrack
     this.currentKey = key
 
-    if (!this.muted) {
+    if (!this.muted && nextTrack.state() === 'loaded') {
       nextTrack.play()
       nextTrack.fade(0, this.volume, 2000)
     }
