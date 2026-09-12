@@ -8,6 +8,12 @@ export type Tag =
   | `rel:${string}`
 
 export type CityType = 'metropolis' | 'industrial' | 'provincial'
+export type FamilyBackground =
+  | 'working_class'
+  | 'intelligentsia'
+  | 'single_mother'
+  | 'commercial'
+export type LifePath = 'street' | 'office' | 'commerce'
 export type Season = 'зима' | 'весна' | 'лето' | 'осень'
 export type EraId =
   | 'era_90s'
@@ -77,6 +83,8 @@ export interface LifeState {
   birthYear: number
   currentYear: number
   season: Season
+  familyBackground: FamilyBackground
+  lifePath?: LifePath
   isDead: boolean
   deathReason?: string
   cityType: CityType
@@ -105,6 +113,7 @@ export interface ChoiceEffects {
   addMemory?: MemoryArtifact
   familyDecayDelta?: number
   parentStatus?: ParentStatus
+  setLifePath?: LifePath
   /** Marks the choice as immediately fatal. */
   fatal?: boolean
   deathReason?: string
@@ -124,6 +133,7 @@ export interface GameEvent {
   maxAge?: number
   /** Повседневное событие может выпадать повторно в разные годы. */
   repeatable?: boolean
+  weight?: number
   cityTypes?: CityType[]
   minYear?: number
   maxYear?: number
@@ -132,6 +142,8 @@ export interface GameEvent {
   requiredTags?: Tag[]
   requiredAnyTags?: Tag[]
   conditionAny?: Array<{ requiredTags?: Tag[]; metricConditions?: MetricConditions }>
+  familyBackgrounds?: FamilyBackground[]
+  lifePaths?: LifePath[]
   forbiddenTags?: Tag[]
   /** If true, this event is only reachable via the echo queue. */
   echoOnly?: boolean

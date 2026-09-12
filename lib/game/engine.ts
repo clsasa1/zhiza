@@ -11,6 +11,7 @@ import type {
   TimelineEntry,
   EraConfig,
   EraId,
+  FamilyBackground,
 } from './types'
 import { EVENTS, EVENTS_BY_ID } from './events'
 
@@ -140,6 +141,12 @@ function cloneState(state: LifeState): LifeState {
 export function createNewLife(): LifeState {
   const cityType = pick<CityType>(['metropolis', 'industrial', 'provincial'])
   const birthYear = randInt(1985, 1988)
+  const familyBackground = pick<FamilyBackground>([
+    'working_class',
+    'intelligentsia',
+    'single_mother',
+    'commercial',
+  ])
 
   // Базовые характеристики зависят от архетипа города.
   const base: Record<CityType, { health: number; stress: number }> = {
@@ -153,13 +160,21 @@ export function createNewLife(): LifeState {
     birthYear,
     currentYear: birthYear,
     season: 'зима',
+    familyBackground,
     isDead: false,
     cityType,
     metrics: {
       health: base[cityType].health + randInt(-4, 4),
       stress: base[cityType].stress + randInt(-4, 4),
     },
-    tags: [],
+    tags:
+      familyBackground === 'working_class'
+        ? ['status:family_poor', 'asset:dacha']
+        : familyBackground === 'intelligentsia'
+          ? ['trait:intellectual_home', 'asset:books', 'asset:piano']
+          : familyBackground === 'single_mother'
+            ? ['trait:hyper_care']
+            : ['status:family_commercial'],
     echoQueue: [],
     seenEvents: [],
     familyDecay: 0,
@@ -176,6 +191,8 @@ export function createNewLife(): LifeState {
       },
     ],
   }
+  if (familyBackground === 'single_mother') state.metrics.stress += 8
+  if (familyBackground === 'commercial') state.metrics.money = 15_000
   return state
 }
 
@@ -370,10 +387,14 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
     return false
   if (ev.requiredAnyTags && !ev.requiredAnyTags.some((t) => state.tags.includes(t)))
     return false
+  if (ev.familyBackgrounds && !ev.familyBackgrounds.includes(state.familyBackground))
+    return false
+  if (ev.lifePaths && (!state.lifePath || !ev.lifePaths.includes(state.lifePath)))
+    return false
   if (ev.conditionAny && !ev.conditionAny.some((condition) => {
     const tagsMatch = !condition.requiredTags || condition.requiredTags.every((tag) => state.tags.includes(tag))
     const metricsMatch = !condition.metricConditions || Object.entries(condition.metricConditions).every(([metric, range]) => {
-      const value = state[metric as keyof LifeState]
+      const value = state.metrics[metric as keyof Metrics]
       return typeof value === 'number' && (range.min === undefined || value >= range.min) && (range.max === undefined || value <= range.max)
     })
     return tagsMatch && metricsMatch
@@ -407,7 +428,22 @@ function selectEvent(state: LifeState): GameEvent | null {
   // Обычное событие из пула. Повторяемые бытовые события не дают годам пропадать.
   const pool = EVENTS.filter((ev) => eventMatches(state, ev))
   if (pool.length === 0) return null
-  return pick(pool)
+  const thematic = pool.filter((event) => (event.weight ?? 10) > 1)
+  const weightedPool = thematic.length > 0 ? thematic : pool
+  const weighted = weightedPool.map((event) => {
+    let weight = event.weight ?? 10
+    if (event.requiredTags?.some((tag) => state.tags.includes(tag))) weight *= 4
+    if (event.familyBackgrounds?.includes(state.familyBackground)) weight *= 4
+    if (event.lifePaths?.includes(state.lifePath ?? 'street')) weight *= 4
+    return { event, weight }
+  })
+  const total = weighted.reduce((sum, item) => sum + item.weight, 0)
+  let roll = Math.random() * total
+  for (const item of weighted) {
+    roll -= item.weight
+    if (roll < 0) return item.event
+  }
+  return weighted[weighted.length - 1].event
 }
 
 // ─────────────────────────────── tickYear
@@ -479,6 +515,7 @@ export function resolveChoice(
   }
   if (eff.addMemory) addMemory(next, eff.addMemory)
   if (eff.parentStatus) next.parentStatus = eff.parentStatus
+  if (eff.setLifePath) next.lifePath = eff.setLifePath
 
   const logKind: TimelineEntry['kind'] = eff.fatal
     ? 'fatal'
