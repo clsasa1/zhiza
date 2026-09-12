@@ -1,4 +1,4 @@
-import { Howl } from 'howler'
+import { Howl, Howler } from 'howler'
 
 export type AudioTrackKey = 'intro' | 'era_90s' | 'era_2000s' | 'era_modern' | 'oldage'
 
@@ -42,6 +42,7 @@ class AudioManager {
       volume: 0,
       onload: () => {
         if (this.currentTrack !== nextTrack || this.muted) return
+        if (!nextTrack.playing()) nextTrack.play()
         nextTrack.fade(0, this.volume, 2000)
       },
       onloaderror: (_id, error) => {
@@ -62,6 +63,7 @@ class AudioManager {
     this.currentKey = key
 
     if (!this.muted) {
+      void Howler.ctx?.resume()
       nextTrack.play()
     }
   }
@@ -73,6 +75,7 @@ class AudioManager {
       this.currentTrack?.fade(this.currentTrack.volume(), 0, 500)
       window.setTimeout(() => this.currentTrack?.pause(), 500)
     } else if (this.currentTrack) {
+      void Howler.ctx?.resume()
       this.currentTrack.play()
       this.currentTrack.fade(0, this.volume, 500)
     }
