@@ -8,12 +8,17 @@ import { StatsPanel } from './stats-panel'
 import { EventCard } from './event-card'
 import { Timeline } from './timeline'
 import { DeathScreen } from './death-screen'
+import { AudioController } from '@/components/audio-controller'
+import { audioManager } from '@/lib/audio/sound-manager'
 
 export function Game() {
   const [state, setState] = useState<LifeState | null>(null)
   const [pendingEvent, setPendingEvent] = useState<GameEvent | null>(null)
+  const [audioStarted, setAudioStarted] = useState(false)
 
   const start = useCallback((birthEra: BirthEraId, cityType: CityType, birthYear: number, familyBackground: FamilyBackground) => {
+    audioManager.playTrack('intro')
+    setAudioStarted(true)
     setState(createNewLife({ birthEra, birthYear, cityType, familyBackground }))
     setPendingEvent(null)
   }, [])
@@ -38,46 +43,59 @@ export function Game() {
     [pendingEvent],
   )
 
-  if (!state) return <StartScreen onStart={start} />
+  if (!state) {
+    return (
+      <>
+        <AudioController state={state} startAudio={audioStarted} />
+        <StartScreen onStart={start} />
+      </>
+    )
+  }
 
   if (state.isDead) {
     return (
-      <DeathScreen
-        state={state}
-        onRestart={() => start('perestroika', 'metropolis', 1986, 'working_class')}
-      />
+      <>
+        <AudioController state={state} startAudio={audioStarted} />
+        <DeathScreen
+          state={state}
+          onRestart={() => start('perestroika', 'metropolis', 1986, 'working_class')}
+        />
+      </>
     )
   }
 
   const awaitingChoice = pendingEvent !== null
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <StatsPanel state={state} />
+    <>
+      <AudioController state={state} startAudio={audioStarted} />
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+        <StatsPanel state={state} />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
-        <div className="flex flex-col gap-4">
-          {awaitingChoice ? (
-            <EventCard event={pendingEvent} onChoose={choose} season={state.season} state={state} />
-          ) : (
-            <IdleCard state={state} />
-          )}
+        <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+          <div className="flex flex-col gap-4">
+            {awaitingChoice ? (
+              <EventCard event={pendingEvent} onChoose={choose} season={state.season} state={state} />
+            ) : (
+              <IdleCard state={state} />
+            )}
 
-          <Button
-            onClick={liveYear}
-            disabled={awaitingChoice}
-            size="lg"
-            className="w-full font-mono text-sm uppercase tracking-[0.2em] disabled:opacity-40"
-          >
-            {awaitingChoice ? 'Сделай выбор ↑' : 'Прожить год →'}
-          </Button>
-        </div>
+            <Button
+              onClick={liveYear}
+              disabled={awaitingChoice}
+              size="lg"
+              className="w-full font-mono text-sm uppercase tracking-[0.2em] disabled:opacity-40"
+            >
+              {awaitingChoice ? 'Сделай выбор ↑' : 'Прожить год →'}
+            </Button>
+          </div>
 
-        <div className="lg:h-[32rem]">
-          <Timeline entries={state.timeline} birthYear={state.birthYear} />
+          <div className="lg:h-[32rem]">
+            <Timeline entries={state.timeline} birthYear={state.birthYear} />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
