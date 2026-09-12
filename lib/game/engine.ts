@@ -268,7 +268,23 @@ function applyPassiveTick(state: LifeState): void {
   state.metrics.stress = clamp(
     state.metrics.stress + city.stressPerYear + era.stressPassiveModifier,
   )
-  state.metrics.health = clamp(state.metrics.health + city.healthPerYear)
+  const biologicalChange =
+    state.age < 18
+      ? 5
+      : state.age <= 25
+        ? (state.metrics.stress < 60 ? 3 : 0)
+        : state.age <= 35
+          ? 0
+          : -1
+  const lifestylePenalty =
+    state.age >= 36
+      ? (state.tags.includes('status:kurit') ? 1 : 0) +
+        (state.tags.includes('status:pyet') ? 1 : 0)
+      : 0
+  const disabilityPenalty = state.tags.includes('trait:invalidnost') ? 1 : 0
+  state.metrics.health = clamp(
+    state.metrics.health + biologicalChange + city.healthPerYear - lifestylePenalty - disabilityPenalty,
+  )
   if (state.age < 18) return
 
   const salary = Object.entries(SALARY_BY_TAG).reduce(
@@ -308,7 +324,7 @@ function applyPassiveTick(state: LifeState): void {
 
 function applyCriticalStress(state: LifeState): void {
   if (state.metrics.stress < 100) return
-  state.metrics.health = clamp(state.metrics.health - 35)
+  state.metrics.health = Math.max(20, clamp(state.metrics.health - 15))
   state.metrics.stress = 75
   state.timeline.push({
     age: state.age,
@@ -319,23 +335,6 @@ function applyCriticalStress(state: LifeState): void {
 
 function randomSeason(): Season {
   return pick<Season>(['зима', 'весна', 'лето', 'осень'])
-}
-
-function formatChoiceEffects(effects: GameChoice['effects']): string {
-  const labels: Array<[string, number | undefined]> = [
-    ['Здоровье', effects.health],
-    ['Стресс', effects.stress],
-    ['Интеллект', effects.intellect],
-    ['Социум', effects.social],
-    ['Деньги', effects.money],
-  ]
-  const changes = labels
-    .filter(([, value]) => value !== undefined && value !== 0)
-    .map(([label, value]) => `${value! > 0 ? '+' : ''}${value} ${label}`)
-  if (effects.addTags?.length) changes.push('новый статус')
-  if (effects.removeTags?.length) changes.push('статус снят')
-  if (effects.addMemory) changes.push('новое воспоминание')
-  return changes.join(', ')
 }
 
 // ─────────────────────────────── Смерть
@@ -487,8 +486,11 @@ export function resolveChoice(
   const next = cloneState(state)
   const eff = choice.effects
 
-  if (eff.health !== undefined)
-    next.metrics.health = clamp(next.metrics.health + eff.health)
+  if (eff.health !== undefined) {
+    const nextHealth = next.metrics.health + eff.health
+    const minimumSafeHealth = !eff.fatal ? (next.age < 16 ? 15 : 10) : 0
+    next.metrics.health = clamp(Math.max(nextHealth, minimumSafeHealth))
+  }
   if (eff.stress !== undefined)
     next.metrics.stress = clamp(next.metrics.stress + eff.stress)
   if (eff.intellect !== undefined && next.metrics.intellect !== undefined)
@@ -520,12 +522,11 @@ export function resolveChoice(
   const logKind: TimelineEntry['kind'] = eff.fatal
     ? 'fatal'
     : choice.logKind ?? 'neutral'
-  const effectsText = formatChoiceEffects(eff)
   next.timeline.push({
     age: next.age,
     year: next.currentYear,
     season: next.season,
-    text: effectsText ? `${choice.logText} (${effectsText})` : choice.logText,
+    text: choice.logText,
     kind: logKind,
   })
 

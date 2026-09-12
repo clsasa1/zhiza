@@ -29,10 +29,10 @@ export function EventCard({
           <button
             key={i}
             onClick={() => onChoose(choice)}
-            className="group bg-card px-5 py-4 text-left transition-colors hover:bg-accent focus:bg-accent focus:outline-none"
+            className="group cursor-pointer bg-card px-5 py-4 text-left transition-all duration-200 ease-out hover:translate-x-0.5 hover:border-zinc-500 hover:bg-zinc-800/80 active:scale-[0.99] focus:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/60"
           >
             <span className="flex items-start gap-3">
-              <span className="font-mono text-sm text-primary">{`>`}</span>
+              <span className="font-mono text-sm text-primary transition-transform duration-200 ease-out group-hover:translate-x-1">{`>`}</span>
               <span className="flex-1">
                 <span className="font-mono text-sm font-medium text-foreground group-hover:text-primary">
                   {choice.text}

@@ -213,7 +213,7 @@ export const EVENTS: GameEvent[] = [
     choices: [
       {
         text: 'Пахать по ночам',
-        effects: { intellect: 16, stress: 16, health: -8, addTags: ['status:student_budget'] },
+        effects: { intellect: 16, stress: 16, health: -4, addTags: ['status:student_budget'] },
         logText: 'Высокие баллы. Бюджет в приличном вузе — твой.',
         logKind: 'good',
       },
@@ -279,7 +279,7 @@ export const EVENTS: GameEvent[] = [
     choices: [
       {
         text: 'Пойти служить',
-        effects: { health: -10, social: 8, stress: 8, addTags: ['trait:sluzhil'] },
+        effects: { health: -5, social: 8, stress: 8, addTags: ['trait:sluzhil'] },
         logText: 'Год сапог и плаца. Вернулся другим человеком.',
         logKind: 'milestone',
       },
