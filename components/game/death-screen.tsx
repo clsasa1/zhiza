@@ -126,7 +126,7 @@ function getKeyTrace(state: LifeState): string {
   if (state.birthYear <= 1988 && state.metrics.money !== undefined && state.metrics.money < 0) {
     return 'Свидетель великих строек и больших надежд, растерявший всё в мутной воде перемен.'
   }
-  if (state.tags.includes('trait:belated_grief') || state.parentStatus === 'deceased') {
+  if (state.tags.includes('trait:belated_grief') || state.motherStatus === 'deceased') {
     return 'Тот, кто искренне пытался быть хорошим сыном, но вечно опаздывал на поезд.'
   }
   if (state.tags.includes('rel:child_born') && state.familyDecay <= 2) {

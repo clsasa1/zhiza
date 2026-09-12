@@ -61,6 +61,7 @@ export interface MetricConditions {
 }
 
 export type ParentStatus = 'healthy' | 'aging' | 'ill' | 'deceased'
+export type IndividualParentStatus = ParentStatus
 
 export interface MemoryArtifact {
   age: number
@@ -103,7 +104,10 @@ export interface LifeState {
   /** Уже сыгранные обычные события — чтобы они не повторялись. */
   seenEvents: string[]
   familyDecay: number
-  parentStatus: ParentStatus
+  motherStatus: IndividualParentStatus
+  fatherStatus: IndividualParentStatus
+  /** @deprecated Use motherStatus/fatherStatus. */
+  parentStatus?: ParentStatus
   memories: MemoryArtifact[]
   lastFamilyActionAge?: number
   lastEventAges: Record<string, number>
@@ -149,6 +153,8 @@ export interface ChoiceEffects {
   addMemory?: MemoryArtifact
   familyDecayDelta?: number
   parentStatus?: ParentStatus
+  motherStatus?: IndividualParentStatus
+  fatherStatus?: IndividualParentStatus
   setLifePath?: LifePath
   /** Marks the choice as immediately fatal. */
   fatal?: boolean
@@ -175,6 +181,9 @@ export interface GameEvent {
   minYear?: number
   maxYear?: number
   parentStatuses?: ParentStatus[]
+  motherStatuses?: IndividualParentStatus[]
+  fatherStatuses?: IndividualParentStatus[]
+  requiresMotherAlive?: boolean
   metricConditions?: MetricConditions
   requiredTags?: Tag[]
   requiredAnyTags?: Tag[]

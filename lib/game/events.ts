@@ -545,7 +545,8 @@ export const EVENTS: GameEvent[] = [
     minAge: 30,
     maxAge: 45,
     forbiddenTags: ['rel:parents_ill'],
-    parentStatuses: ['aging', 'ill'],
+    motherStatuses: ['aging', 'ill'],
+    fatherStatuses: ['healthy', 'aging', 'ill'],
     title: 'Стареющие родители',
     text: 'Мать всё чаще говорит «ничего страшного», а потом кладёт трубку после очередного визита в поликлинику.',
     choices: [
@@ -844,14 +845,14 @@ export const EVENTS: GameEvent[] = [
     echoOnly: true,
     minAge: 34,
     maxAge: 42,
-    parentStatuses: ['aging', 'ill'],
+    motherStatuses: ['aging', 'ill'],
     title: 'Звонок с незнакомого номера',
     text: 'Заведующая терапевтическим отделением сухо сообщает, что матери не стало в прошлый четверг. В комоде нашли конверт «На похороны» и распечатанные фотографии из твоих соцсетей за последние восемь лет.',
     choices: [
       {
         text: 'Выслушать и записать адрес морга',
         effects: {
-          parentStatus: 'deceased',
+          motherStatus: 'deceased',
           familyDecayDelta: 0,
           addTags: ['trait:belated_grief'],
           addMemory: {
@@ -864,6 +865,36 @@ export const EVENTS: GameEvent[] = [
         },
         logText: 'В пустой квартире пахло пылью. Конверт лежал в комоде сверху.',
         logKind: 'fatal',
+      },
+    ],
+  },
+  {
+    id: 'widowed_father',
+    minAge: 38,
+    maxAge: 55,
+    weight: 28,
+    motherStatuses: ['deceased'],
+    fatherStatuses: ['healthy', 'aging', 'ill'],
+    title: 'Овдовевший отец',
+    text: 'Ты приезжаешь в родительскую квартиру. На кухне непривычно тихо: нет запаха пирогов, на холодильнике висят старые мамины записки со списком лекарств. Отец сидит в растянутом свитере перед выключенным телевизором и делает вид, что просто устал.',
+    choices: [
+      {
+        text: 'Остаться на несколько дней и разобрать быт',
+        effects: { money: -12000, stress: -8, familyDecayDelta: -3, fatherStatus: 'aging', addMemory: { age: 0, id: 'widowed_father_visit', text: 'Тихая кухня, мамины записки на холодильнике и отец перед выключенным телевизором.', category: 'family', emotionalWeight: 9 } },
+        logText: 'Остался на несколько дней. Список лекарств переписали крупнее.',
+        logKind: 'good',
+      },
+      {
+        text: 'Нанять сиделку и приезжать по воскресеньям',
+        effects: { money: -30000, stress: -3, familyDecayDelta: -1 },
+        logText: 'Сиделка стала приходить по будням. По воскресеньям отец ждал звонка.',
+        logKind: 'neutral',
+      },
+      {
+        text: 'Сказать, что сейчас не время для разговоров',
+        effects: { stress: 12, familyDecayDelta: 2, fatherStatus: 'ill' },
+        logText: 'Отец кивнул и выключил телевизор. В подъезде уже горел свет.',
+        logKind: 'bad',
       },
     ],
   },
@@ -2048,6 +2079,9 @@ export const EVENTS: GameEvent[] = [
   },
   {
     id: 'mother_through_life',
+    requiresMotherAlive: true,
+    motherStatuses: ['healthy', 'aging', 'ill'],
+    forbiddenTags: ['trait:belated_grief', 'status:mother_deceased'],
     minAge: 25,
     maxAge: 45,
     repeatable: true,
@@ -2213,6 +2247,9 @@ export const EVENTS: GameEvent[] = [
   },
   {
     id: 'mother_wool_tights',
+    requiresMotherAlive: true,
+    motherStatuses: ['healthy', 'aging', 'ill'],
+    forbiddenTags: ['trait:belated_grief', 'status:mother_deceased'],
     minAge: 4,
     maxAge: 7,
     weight: 16,
@@ -2269,6 +2306,9 @@ export const EVENTS: GameEvent[] = [
   },
   {
     id: 'mother_train_bag',
+    requiresMotherAlive: true,
+    motherStatuses: ['healthy', 'aging', 'ill'],
+    forbiddenTags: ['trait:belated_grief', 'status:mother_deceased'],
     minAge: 18,
     maxAge: 24,
     weight: 16,
@@ -2297,6 +2337,9 @@ export const EVENTS: GameEvent[] = [
   },
   {
     id: 'mother_dacha_potatoes',
+    requiresMotherAlive: true,
+    motherStatuses: ['healthy', 'aging', 'ill'],
+    forbiddenTags: ['trait:belated_grief', 'status:mother_deceased'],
     minAge: 30,
     maxAge: 42,
     weight: 16,
@@ -2353,6 +2396,35 @@ export const EVENTS: GameEvent[] = [
     ],
   },
   {
+    id: 'abandoned_dacha',
+    minAge: 40,
+    maxAge: 50,
+    seasons: ['весна'],
+    requiredTags: ['status:mother_deceased', 'asset:dacha'],
+    title: 'Заброшенные шесть соток',
+    text: 'Мамы нет уже несколько лет, дачный домик осел, участок зарос бурьяном и крапивой в человеческий рост. Соседи косятся на забор, а в сарае всё так же стоят мамины тяпки и старые резиновые калоши.',
+    choices: [
+      {
+        text: 'Взять отгулы, приехать и выкосить бурьян',
+        effects: { health: -4, stress: -8, familyDecayDelta: -1, addMemory: { age: 0, id: 'abandoned_dacha_cleanup', text: 'Мамины тяпки в заросшем дачном участке.', category: 'family', emotionalWeight: 8 } },
+        logText: 'Взял отгулы и выкосил бурьян. Тяпки остались в сарае.',
+        logKind: 'good',
+      },
+      {
+        text: 'Выставить участок на продажу за бесценок',
+        effects: { money: 80000, removeTags: ['asset:dacha'], addMemory: { age: 0, id: 'sold_dacha', text: 'Дачный домик продан вместе с мамиными калошами.', category: 'regret', emotionalWeight: 7 } },
+        logText: 'Участок продали быстро. В сарай за вещами больше не возвращались.',
+        logKind: 'neutral',
+      },
+      {
+        text: 'Заколотить дом и не приезжать сюда вовсе',
+        effects: { stress: 12, addMemory: { age: 0, id: 'boarded_dacha', text: 'Заколоченный родительский дом на заросших шести сотках.', category: 'regret', emotionalWeight: 8 } },
+        logText: 'Окна заколотили. Сосед обещал присматривать за забором.',
+        logKind: 'bad',
+      },
+    ],
+  },
+  {
     id: 'stress_kitchen_breakdown',
     minAge: 18,
     maxAge: 45,
@@ -2391,7 +2463,7 @@ export const EVENTS: GameEvent[] = [
     text: 'Пятница закончилась у круглосуточного магазина. В субботу никто не спрашивал, который час, а в воскресенье нужно было возвращаться к обычной жизни.',
     choices: [
       {
-        text: 'Напиться до беспамятства',
+        text: 'Заглушить шум в голове',
         effects: { health: -8, stress: -14, addTags: ['status:pyet'] },
         logText: 'Утро началось с сухого рта и выключенного телефона.',
         logKind: 'bad',

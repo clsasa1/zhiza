@@ -217,7 +217,8 @@ export function createNewLife(options?: {
     echoQueue: [],
     seenEvents: [],
     familyDecay: 0,
-    parentStatus: 'healthy',
+    motherStatus: 'healthy',
+    fatherStatus: familyBackground === 'single_mother' ? 'deceased' : 'healthy',
     memories: [],
     lastEventAges: {},
     activeSagas: {},
@@ -260,22 +261,20 @@ function applyMetricUnlocks(state: LifeState): void {
 }
 
 function updateParentStatus(state: LifeState): void {
-  if (state.parentStatus === 'healthy' && state.age >= 30) {
-    state.parentStatus = 'aging'
+  if (state.motherStatus === 'healthy' && state.age >= 30) {
+    state.motherStatus = 'aging'
   }
-  if (
-    state.parentStatus === 'aging' &&
-    state.age >= 38 &&
-    state.metrics.health < 55
-  ) {
-    state.parentStatus = 'ill'
+  if (state.motherStatus === 'aging' && state.age >= 38 && state.metrics.health < 55) {
+    state.motherStatus = 'ill'
   }
+  if (state.fatherStatus === 'healthy' && state.age >= 30) state.fatherStatus = 'aging'
+  if (state.fatherStatus === 'aging' && state.age >= 38 && state.metrics.health < 55) state.fatherStatus = 'ill'
 }
 
 function queueFamilyEcho(state: LifeState): void {
   if (
     state.familyDecay < 5 ||
-    state.parentStatus === 'deceased' ||
+    state.motherStatus === 'deceased' ||
     state.age < 34 ||
     state.age > 42 ||
     state.echoQueue.some((entry) => entry.eventId === 'echo_parent_death_alone')
@@ -463,8 +462,18 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
   if (ev.maxYear !== undefined && state.currentYear > ev.maxYear) return false
   if (ev.seasons && !ev.seasons.includes(state.season)) return false
   if (ev.cityTypes && !ev.cityTypes.includes(state.cityType)) return false
-  if (ev.parentStatuses && !ev.parentStatuses.includes(state.parentStatus))
+  if (ev.parentStatuses && !ev.parentStatuses.includes(state.motherStatus))
     return false
+  if (ev.motherStatuses && !ev.motherStatuses.includes(state.motherStatus)) return false
+  if (ev.fatherStatuses && !ev.fatherStatuses.includes(state.fatherStatus)) return false
+  if (ev.requiresMotherAlive && state.motherStatus === 'deceased') return false
+  if (
+    state.motherStatus === 'deceased' &&
+    ev.id !== 'abandoned_dacha' &&
+    (ev.requiresMotherAlive ||
+      ev.title.toLowerCase().includes('мам') ||
+      (typeof ev.text === 'string' && /мам|матер|мать/i.test(ev.text)))
+  ) return false
   if (ev.parentStatuses && state.familyDecay >= 5 && !allowEcho) return false
   if (ev.requiredTags && !ev.requiredTags.every((t) => state.tags.includes(t)))
     return false
@@ -642,7 +651,16 @@ export function resolveChoice(
     next.lastFamilyActionAge = next.age
   }
   if (eff.addMemory) addMemory(next, eff.addMemory)
-  if (eff.parentStatus) next.parentStatus = eff.parentStatus
+  if (eff.parentStatus) {
+    next.parentStatus = eff.parentStatus
+    next.motherStatus = eff.parentStatus
+  }
+  if (eff.motherStatus) next.motherStatus = eff.motherStatus
+  if (eff.fatherStatus) next.fatherStatus = eff.fatherStatus
+  if (eff.motherStatus === 'deceased') {
+    next.tags = next.tags.filter((tag) => tag !== 'status:mother_deceased')
+    next.tags.push('status:mother_deceased')
+  }
   if (eff.setLifePath) next.lifePath = eff.setLifePath
 
   const logKind: TimelineEntry['kind'] = eff.fatal
