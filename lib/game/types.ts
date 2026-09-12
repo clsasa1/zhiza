@@ -8,6 +8,7 @@ export type Tag =
   | `rel:${string}`
 
 export type CityType = 'metropolis' | 'industrial' | 'provincial'
+export type Season = 'зима' | 'весна' | 'лето' | 'осень'
 export type EraId =
   | 'era_90s'
   | 'era_2000s_fat'
@@ -65,6 +66,7 @@ export interface EchoEntry {
 export interface TimelineEntry {
   age: number
   year?: number
+  season?: Season
   text: string
   /** Visual weight of the entry for the life ribbon. */
   kind?: 'neutral' | 'good' | 'bad' | 'fatal' | 'milestone'
@@ -74,6 +76,7 @@ export interface LifeState {
   age: number
   birthYear: number
   currentYear: number
+  season: Season
   isDead: boolean
   deathReason?: string
   cityType: CityType
@@ -87,6 +90,7 @@ export interface LifeState {
   parentStatus: ParentStatus
   memories: MemoryArtifact[]
   lastFamilyActionAge?: number
+  lastEventAges: Record<string, number>
 }
 
 export interface ChoiceEffects {
@@ -126,6 +130,8 @@ export interface GameEvent {
   parentStatuses?: ParentStatus[]
   metricConditions?: MetricConditions
   requiredTags?: Tag[]
+  requiredAnyTags?: Tag[]
+  conditionAny?: Array<{ requiredTags?: Tag[]; metricConditions?: MetricConditions }>
   forbiddenTags?: Tag[]
   /** If true, this event is only reachable via the echo queue. */
   echoOnly?: boolean

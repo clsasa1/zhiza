@@ -6,6 +6,7 @@ import type {
   Metrics,
   MemoryArtifact,
   ParentStatus,
+  Season,
   Tag,
   TimelineEntry,
   EraConfig,
@@ -131,13 +132,14 @@ function cloneState(state: LifeState): LifeState {
     timeline: state.timeline.map((t) => ({ ...t })),
     seenEvents: [...state.seenEvents],
     memories: state.memories.map((memory) => ({ ...memory })),
+    lastEventAges: { ...state.lastEventAges },
   }
 }
 
 // ─────────────────────────────── Инициализация
 export function createNewLife(): LifeState {
   const cityType = pick<CityType>(['metropolis', 'industrial', 'provincial'])
-  const birthYear = randInt(1990, 2005)
+  const birthYear = randInt(1985, 1988)
 
   // Базовые характеристики зависят от архетипа города.
   const base: Record<CityType, { health: number; stress: number }> = {
@@ -150,6 +152,7 @@ export function createNewLife(): LifeState {
     age: 0,
     birthYear,
     currentYear: birthYear,
+    season: 'зима',
     isDead: false,
     cityType,
     metrics: {
@@ -162,10 +165,12 @@ export function createNewLife(): LifeState {
     familyDecay: 0,
     parentStatus: 'healthy',
     memories: [],
+    lastEventAges: {},
     timeline: [
       {
         age: 0,
         year: birthYear,
+        season: 'зима',
         text: `Родился в ${birthYear} году в ${CITY_LABELS[cityType].toLowerCase()}. Первый крик, первый вдох, первый счёт в жизни.`,
         kind: 'milestone',
       },
@@ -295,6 +300,27 @@ function applyCriticalStress(state: LifeState): void {
   })
 }
 
+function randomSeason(): Season {
+  return pick<Season>(['зима', 'весна', 'лето', 'осень'])
+}
+
+function formatChoiceEffects(effects: GameChoice['effects']): string {
+  const labels: Array<[string, number | undefined]> = [
+    ['Здоровье', effects.health],
+    ['Стресс', effects.stress],
+    ['Интеллект', effects.intellect],
+    ['Социум', effects.social],
+    ['Деньги', effects.money],
+  ]
+  const changes = labels
+    .filter(([, value]) => value !== undefined && value !== 0)
+    .map(([label, value]) => `${value! > 0 ? '+' : ''}${value} ${label}`)
+  if (effects.addTags?.length) changes.push('новый статус')
+  if (effects.removeTags?.length) changes.push('статус снят')
+  if (effects.addMemory) changes.push('новое воспоминание')
+  return changes.join(', ')
+}
+
 // ─────────────────────────────── Смерть
 function checkDeath(state: LifeState): boolean {
   if (state.isDead) return true
@@ -328,6 +354,10 @@ function checkDeath(state: LifeState): boolean {
 function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boolean {
   if (ev.echoOnly && !allowEcho) return false
   if (!ev.repeatable && state.seenEvents.includes(ev.id)) return false
+  if (ev.repeatable) {
+    const lastSeen = state.lastEventAges[ev.id]
+    if (lastSeen !== undefined && state.age - lastSeen < 4) return false
+  }
   if (ev.minAge !== undefined && state.age < ev.minAge) return false
   if (ev.maxAge !== undefined && state.age > ev.maxAge) return false
   if (ev.minYear !== undefined && state.currentYear < ev.minYear) return false
@@ -338,6 +368,16 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
   if (ev.parentStatuses && state.familyDecay >= 5 && !allowEcho) return false
   if (ev.requiredTags && !ev.requiredTags.every((t) => state.tags.includes(t)))
     return false
+  if (ev.requiredAnyTags && !ev.requiredAnyTags.some((t) => state.tags.includes(t)))
+    return false
+  if (ev.conditionAny && !ev.conditionAny.some((condition) => {
+    const tagsMatch = !condition.requiredTags || condition.requiredTags.every((tag) => state.tags.includes(tag))
+    const metricsMatch = !condition.metricConditions || Object.entries(condition.metricConditions).every(([metric, range]) => {
+      const value = state[metric as keyof LifeState]
+      return typeof value === 'number' && (range.min === undefined || value >= range.min) && (range.max === undefined || value <= range.max)
+    })
+    return tagsMatch && metricsMatch
+  })) return false
   if (ev.forbiddenTags && ev.forbiddenTags.some((t) => state.tags.includes(t)))
     return false
   if (ev.metricConditions) {
@@ -379,6 +419,7 @@ export function tickYear(state: LifeState): {
   if (next.isDead) return { nextState: next, event: null }
 
   next.age += 1
+  next.season = randomSeason()
   next.currentYear = next.birthYear + next.age
   updateParentStatus(next)
 
@@ -395,6 +436,7 @@ export function tickYear(state: LifeState): {
   const event = selectEvent(next)
   if (event && !event.echoOnly) {
     next.seenEvents.push(event.id)
+    next.lastEventAges[event.id] = next.age
   }
 
   return { nextState: next, event }
@@ -441,7 +483,14 @@ export function resolveChoice(
   const logKind: TimelineEntry['kind'] = eff.fatal
     ? 'fatal'
     : choice.logKind ?? 'neutral'
-  next.timeline.push({ age: next.age, text: choice.logText, kind: logKind })
+  const effectsText = formatChoiceEffects(eff)
+  next.timeline.push({
+    age: next.age,
+    year: next.currentYear,
+    season: next.season,
+    text: effectsText ? `${choice.logText} (${effectsText})` : choice.logText,
+    kind: logKind,
+  })
 
   // Заложить будущее эхо-событие.
   if (choice.echo) {

@@ -1,39 +1,19 @@
-import type { GameChoice, GameEvent } from '@/lib/game/types'
-
-function EffectHint({ choice }: { choice: GameChoice }) {
-  const e = choice.effects
-  const parts: string[] = []
-  const push = (label: string, v?: number) => {
-    if (v === undefined || v === 0) return
-    parts.push(`${label} ${v > 0 ? '+' : ''}${label === '₽' ? v.toLocaleString('ru-RU') : v}`)
-  }
-  push('HP', e.health)
-  push('Стресс', e.stress)
-  push('Инт', e.intellect)
-  push('Соц', e.social)
-  push('₽', e.money)
-  if (choice.echo) parts.push('эхо…')
-  if (e.fatal) parts.push('РИСК СМЕРТИ')
-  if (parts.length === 0) return null
-  return (
-    <span className="mt-1 block font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-      {parts.join('  ·  ')}
-    </span>
-  )
-}
+import type { GameChoice, GameEvent, Season } from '@/lib/game/types'
 
 export function EventCard({
   event,
   onChoose,
+  season,
 }: {
   event: GameEvent
   onChoose: (choice: GameChoice) => void
+  season: Season
 }) {
   return (
     <div className="flex flex-col border border-border bg-card">
       <div className="border-b border-primary/60 bg-primary/10 px-5 py-3">
         <span className="font-mono text-[10px] uppercase tracking-widest text-primary">
-          Событие
+          Событие · {season}
         </span>
         <h2 className="font-sans text-xl font-bold uppercase tracking-tight text-foreground">
           {event.title}
@@ -57,7 +37,6 @@ export function EventCard({
                 <span className="font-mono text-sm font-medium text-foreground group-hover:text-primary">
                   {choice.text}
                 </span>
-                <EffectHint choice={choice} />
               </span>
             </span>
           </button>

@@ -51,7 +51,7 @@ export function Game() {
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="flex flex-col gap-4">
           {awaitingChoice ? (
-            <EventCard event={pendingEvent} onChoose={choose} />
+            <EventCard event={pendingEvent} onChoose={choose} season={state.season} />
           ) : (
             <IdleCard state={state} />
           )}

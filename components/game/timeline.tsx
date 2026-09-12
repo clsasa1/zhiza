@@ -54,6 +54,7 @@ export function Timeline({
               >
                 <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
                   {entry.year ?? birthYear + entry.age} | {String(entry.age).padStart(2, '0')} лет
+                  {entry.season ? ` · ${entry.season}` : ''}
                 </span>
                 <p className={`text-pretty font-mono text-xs leading-relaxed ${KIND_TEXT[kind]}`}>
                   {entry.text}
