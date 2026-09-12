@@ -425,32 +425,6 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
 }
 
 function selectEvent(state: LifeState): GameEvent | null {
-  const presentEvent = (event: GameEvent): GameEvent =>
-    state.metrics.stress >= 90
-      ? {
-          ...event,
-          choices: event.panicChoices ?? [
-            {
-              text: 'Сорваться на близких',
-              effects: { stress: 8, social: -10, familyDecayDelta: 2 },
-              logText: 'Слова вылетели раньше, чем ты успел их остановить.',
-              logKind: 'bad',
-            },
-            {
-              text: 'Напиться до беспамятства',
-              effects: { health: -6, stress: -12, addTags: ['status:pyet'] },
-              logText: 'Утро началось с сухого рта и выключенного телефона.',
-              logKind: 'bad',
-            },
-            {
-              text: 'Запереться в ванной и выключить телефон',
-              effects: { stress: 4, social: -6 },
-              logText: 'Плитка была холодной. Мир снаружи подождал за дверью.',
-              logKind: 'neutral',
-            },
-          ],
-        }
-      : event
   // 1. Приоритет — эхо-события, чей targetAge совпал.
   const dueIndex = state.echoQueue.findIndex((e) => e.targetAge <= state.age)
   if (dueIndex !== -1) {
@@ -479,10 +453,10 @@ function selectEvent(state: LifeState): GameEvent | null {
   let roll = Math.random() * total
   for (const item of weighted) {
     roll -= item.weight
-    if (roll < 0)         return presentEvent(item.event)
+    if (roll < 0)             return item.event
   }
   const selected = weighted[weighted.length - 1].event
-  return presentEvent(selected)
+  return selected
 }
 
 // ─────────────────────────────── tickYear

@@ -145,7 +145,6 @@ export interface GameEvent {
   conditionAny?: Array<{ requiredTags?: Tag[]; metricConditions?: MetricConditions }>
   familyBackgrounds?: FamilyBackground[]
   lifePaths?: LifePath[]
-  panicChoices?: GameChoice[]
   forbiddenTags?: Tag[]
   /** If true, this event is only reachable via the echo queue. */
   echoOnly?: boolean
