@@ -2721,31 +2721,104 @@ export const EVENTS: GameEvent[] = [
     ],
   },
   {
+    id: 'garage_purchase',
+    minAge: 30,
+    maxAge: 55,
+    weight: 12,
+    forbiddenTags: ['asset:garage'],
+    title: 'Гаражный бокс',
+    text: 'В кооперативе освобождается бокс: бетонный пол, железные ворота и облупившаяся табличка с номером. Свой гараж — это место для машины, инструмента и бесконечного списка работ.',
+    choices: [
+      {
+        text: 'Купить гараж',
+        effects: { money: -180000, stress: 8, addTags: ['asset:garage'] },
+        logText: 'Ключ от гаража лёг в карман. Вместе с ним появился бетонный пол и новая статья расходов.',
+        logKind: 'milestone',
+      },
+      {
+        text: 'Оставить машину на открытой стоянке',
+        effects: { stress: -4, money: 10000 },
+        logText: 'От гаража отказался. Машина осталась под открытым небом, зато денег хватило до зарплаты.',
+        logKind: 'neutral',
+      },
+    ],
+  },
+  {
     id: 'garage_repair_saga',
     minAge: 40,
     maxAge: 55,
     weight: 18,
-    requiredAnyTags: ['asset:car_domestic', 'asset:car_foreign', 'asset:stall'],
-    title: 'Гаражный ремонт',
-    text: 'В гараже течёт крыша, машина не заводится с первого раза, а сосед уже предлагает «нормальный» сервис за цену половины отпуска.',
+    requiredTags: ['asset:garage'],
+    title: 'Крыша гаража',
+    text: 'Весенняя капель добралась и до гаражного кооператива: рубероид на крыше бокса растрескался, по дальней стене пошла сырость, подтапливая смотровую яму. Сосед по ряду зовёт скинуться на перекрытие крыши на двоих.',
     choices: [
       {
-        text: 'Вложиться и сделать по-человечески',
+        text: 'Скинуться и нанять бригаду с горелками',
         effects: { money: -70000, stress: -8, health: 3, addTags: ['asset:garage_repaired'] },
-        logText: 'Ворота закрылись ровно. Внутри впервые пахло не сыростью, а свежей стружкой.',
+        logText: 'Бригада перекрыла крышу за два дня. Смотровая яма высохла, инструмент больше не ржавеет.',
         logKind: 'good',
       },
       {
-        text: 'Собрать всё самому по видео',
-        effects: { money: -15000, stress: 16, health: -4 },
-        logText: 'Три детали остались лишними. Машина завелась со второй попытки и чужого толчка.',
+        text: 'Залезть самому в выходные с рулоном технониколя',
+        effects: { money: -15000, stress: 16, health: -4, addTags: ['asset:garage_repaired'] },
+        logText: 'Всю субботу провёл на крыше. Сэкономил на бригаде, но к вечеру руки дрожали от усталости.',
         logKind: 'neutral',
       },
       {
-        text: 'Оставить как есть',
+        text: 'Подставить таз и забить до осени',
         effects: { stress: 8, health: -2 },
-        logText: 'Дверь снова заклинило. Ты решил заняться этим после зарплаты.',
+        logText: 'Под тазом собралась ржавая вода. Инструмент медленно покрывался налётом.',
         logKind: 'bad',
+      },
+    ],
+  },
+  {
+    id: 'car_breakdown',
+    minAge: 30,
+    maxAge: 55,
+    weight: 18,
+    conditionAny: [
+      { requiredTags: ['asset:car_domestic'] },
+      { requiredTags: ['asset:old_car'] },
+      { requiredTags: ['asset:lada_vaz'] },
+      { requiredTags: ['asset:car_foreign'] },
+      { requiredTags: ['asset:modern_car'] },
+      { requiredTags: ['asset:foreign_car'] },
+    ],
+    title: 'Поломка автомобиля',
+    text: (state) => {
+      const oldCar =
+        state.tags.includes('asset:car_domestic') ||
+        state.tags.includes('asset:old_car') ||
+        state.tags.includes('asset:lada_vaz')
+      return oldCar
+        ? 'Старая «восьмёрка» снова закапризничала: стартер щёлкает вхолостую, втягивающее реле умерло. Нужно либо нырять под капот с монтировкой, либо тащить на тросе к дяде Юре.'
+        : 'На приборной панели новой иномарки загорелась гирлянда ошибок: забарахлил блок электроники или датчик парктроника. Дилер разводит руками и предлагает оставить машину на две недели под заказ детали.'
+    },
+    choices: [
+      {
+        text: (state) => {
+          const oldCar = state.tags.includes('asset:car_domestic') || state.tags.includes('asset:old_car') || state.tags.includes('asset:lada_vaz')
+          return oldCar ? 'Нырнуть под капот и менять реле самому' : 'Ждать официалов по гарантии и пересесть на такси/автобус'
+        },
+        effects: { money: -12000, stress: 4, health: -2 },
+        logText: 'Машина снова на ходу.',
+        logKind: 'neutral',
+      },
+      {
+        text: (state) => {
+          const oldCar = state.tags.includes('asset:car_domestic') || state.tags.includes('asset:old_car') || state.tags.includes('asset:lada_vaz')
+          return oldCar ? 'Оттащить машину на тросе к дяде Юре' : 'Поехать к неофициалам с профильным сканером'
+        },
+        effects: { money: -25000, stress: -6, health: -1 },
+        logText: 'Машину приняли в ремонт. Счёт оказался неприятным, но теперь хотя бы понятно, что сломалось.',
+        logKind: 'good',
+      },
+      {
+        text: 'Продать проблемную машину и пересесть на общественный транспорт',
+        effects: { money: -30000, stress: 10, removeTags: ['asset:car_domestic', 'asset:car_foreign', 'asset:old_car', 'asset:lada_vaz', 'asset:modern_car', 'asset:foreign_car'] },
+        logText: 'Ключи ушли новому владельцу. Теперь до работы — автобусом, зато без внезапных сигналов под капотом.',
+        logKind: 'neutral',
       },
     ],
   },

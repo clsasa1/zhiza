@@ -654,6 +654,14 @@ export function resolveChoice(
 
   if (eff.addTags) {
     for (const t of eff.addTags) if (!next.tags.includes(t)) next.tags.push(t)
+    const modernCarTags = ['asset:car_foreign', 'asset:foreign_car', 'asset:modern_car']
+    const oldCarTags = ['asset:car_domestic', 'asset:old_car', 'asset:lada_vaz']
+    if (eff.addTags.some((tag) => modernCarTags.includes(tag))) {
+      next.tags = next.tags.filter((tag) => !oldCarTags.includes(tag))
+    }
+    if (eff.addTags.some((tag) => oldCarTags.includes(tag))) {
+      next.tags = next.tags.filter((tag) => !modernCarTags.includes(tag))
+    }
   }
   if (eff.randomTags && Math.random() < eff.randomTags.chance) {
     for (const t of eff.randomTags.tags) {
