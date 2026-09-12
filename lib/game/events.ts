@@ -2997,7 +2997,6 @@ export const EVENTS: GameEvent[] = [
       {
         text: 'Подписать контракт и закрыть долги',
         effects: { money: 2500000, stress: 40, addTags: ['status:contract_soldier', 'status:contract_decided'] },
-        echo: { eventId: 'echo_combat_risk', minDelay: 1, maxDelay: 2 },
         logText: 'Поставил подпись в военкомате. Деньги упали на счёт на следующий день, но спать ночами ты перестал.',
         logKind: 'bad',
       },

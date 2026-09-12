@@ -608,6 +608,30 @@ function selectEvent(state: LifeState): GameEvent | null {
 }
 
 // ─────────────────────────────── tickYear
+function resolveContractOutcome(state: LifeState): void {
+  if (!state.tags.includes('status:contract_soldier')) return
+
+  const roll = Math.random()
+  state.tags = state.tags.filter((tag) => tag !== 'status:contract_soldier')
+  if (roll < 0.8) {
+    state.isDead = true
+    state.deathReason = 'Осколочное ранение под посадкой. Выплаты пришли семье, ипотека закрыта, но тебя похоронили на городском кладбище под звуки холостых залпов.'
+    state.timeline.push({ age: state.age, year: state.currentYear, season: state.season, text: state.deathReason, kind: 'fatal' })
+    return
+  }
+  if (roll < 0.9) {
+    state.metrics.health = Math.min(state.metrics.health, 25)
+    state.metrics.stress = clamp(state.metrics.stress + 35)
+    state.tags.push('status:disabled', 'trait:ptsd', 'status:veteran')
+    state.timeline.push({ age: state.age, year: state.currentYear, season: state.season, text: 'Госпиталь, бесконечные операции, протез и звон в ушах по ночам. Деньги на счету есть, но прежнего тела уже не вернуть.', kind: 'bad' })
+    return
+  }
+  state.metrics.money = (state.metrics.money ?? 0) + 1500000
+  state.metrics.stress = clamp(state.metrics.stress + 25)
+  state.tags.push('status:served_contract', 'status:veteran')
+  state.timeline.push({ age: state.age, year: state.currentYear, season: state.season, text: 'Контракт закончился. Перрон родного города, на счёте лежит внушительная сумма. Ты выжил, но смотреть на мир прежними глазами уже не получается.', kind: 'milestone' })
+}
+
 export function tickYear(state: LifeState): {
   nextState: LifeState
   event: GameEvent | null
@@ -645,6 +669,9 @@ export function tickYear(state: LifeState): {
   queueHistoricalEchoes(next)
 
   if (checkDeath(next)) return { nextState: next, event: null }
+
+  resolveContractOutcome(next)
+  if (next.isDead) return { nextState: next, event: null }
 
   const event = selectEvent(next)
   if (next.tags.includes('status:in_army') && next.armyYearsLeft !== undefined) {
