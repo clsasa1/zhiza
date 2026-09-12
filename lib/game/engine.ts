@@ -547,6 +547,38 @@ function selectEvent(state: LifeState): GameEvent | null {
 
   // Обычное событие из пула. Повторяемые бытовые события не дают годам пропадать.
   const pool = EVENTS.filter((ev) => eventMatches(state, ev))
+  if (pool.length === 0 && state.age >= 46) {
+    return adaptEvent({
+      id: 'mature_daily_routine',
+      minAge: 46,
+      maxAge: MAX_AGE,
+      repeatable: true,
+      title: 'Обычный день после пятидесяти',
+      text: state.tags.includes('status:retired')
+        ? 'Утро начинается без будильника. Нужно забрать лекарства, позвонить родственникам и решить, чем занять длинный день.'
+        : 'Рабочий день закончился раньше обычного: спина ноет, телефон молчит, а дома ждут квитанции, лекарства и непроговорённые разговоры.',
+      choices: [
+        {
+          text: 'Заняться делами и позвонить близким',
+          effects: { stress: -4, social: 4, familyDecayDelta: -1 },
+          logText: 'День ушёл на простые дела и короткие звонки. От этого стало чуть спокойнее.',
+          logKind: 'neutral',
+        },
+        {
+          text: 'Сходить в поликлинику и не откладывать обследование',
+          effects: { money: -8000, health: 4, stress: 4 },
+          logText: 'Записался к врачу. Очередь заняла полдня, зато дело больше не висит в голове.',
+          logKind: 'good',
+        },
+        {
+          text: 'Уехать на дачу и копаться в земле',
+          effects: { health: 2, stress: -6, social: -2 },
+          logText: 'Земля под ногтями оказалась убедительнее новостей. Вечером усталость была честной.',
+          logKind: 'good',
+        },
+      ],
+    })
+  }
   if (pool.length === 0) return null
   const thematic = pool.filter((event) => (event.weight ?? 10) > 1)
   const weightedPool = thematic.length > 0 ? thematic : pool
