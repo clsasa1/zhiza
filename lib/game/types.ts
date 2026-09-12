@@ -8,6 +8,7 @@ export type Tag =
   | `rel:${string}`
 
 export type CityType = 'metropolis' | 'industrial' | 'provincial'
+export type BirthEraId = 'perestroika' | 'early_nineties' | 'late_nineties'
 export type FamilyBackground =
   | 'working_class'
   | 'intelligentsia'
@@ -81,6 +82,7 @@ export interface TimelineEntry {
 export interface LifeState {
   age: number
   birthYear: number
+  birthEra: BirthEraId
   currentYear: number
   season: Season
   familyBackground: FamilyBackground
@@ -99,6 +101,17 @@ export interface LifeState {
   memories: MemoryArtifact[]
   lastFamilyActionAge?: number
   lastEventAges: Record<string, number>
+}
+
+export interface PsychologicalVerdictInput {
+  age: number
+  birthYear: number
+  cityType: CityType
+  tags: Tag[]
+  familyDecay: number
+  memories: MemoryArtifact[]
+  metrics: Metrics
+  timeline: TimelineEntry[]
 }
 
 export interface ChoiceEffects {

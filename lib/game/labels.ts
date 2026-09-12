@@ -52,6 +52,7 @@ const TAG_LABELS: Record<string, string> = {
   'status:divorced': 'Разведён',
   'status:chronic_illness': 'Хроническое заболевание',
   'status:ulcer': 'Язва',
+  'status:aging_body': 'Возрастной износ',
   'asset:dacha': 'Дача',
   'asset:books': 'Книги',
   'asset:piano': 'Пианино',

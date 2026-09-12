@@ -2355,6 +2355,64 @@ export const EVENTS: GameEvent[] = [
       },
     ],
   },
+  {
+    id: 'garage_repair_saga',
+    minAge: 40,
+    maxAge: 55,
+    weight: 18,
+    requiredAnyTags: ['asset:car_domestic', 'asset:car_foreign', 'asset:stall'],
+    title: 'Гаражный ремонт',
+    text: 'В гараже течёт крыша, машина не заводится с первого раза, а сосед уже предлагает «нормальный» сервис за цену половины отпуска.',
+    choices: [
+      {
+        text: 'Вложиться и сделать по-человечески',
+        effects: { money: -70000, stress: -8, health: 3, addTags: ['asset:garage_repaired'] },
+        logText: 'Ворота закрылись ровно. Внутри впервые пахло не сыростью, а свежей стружкой.',
+        logKind: 'good',
+      },
+      {
+        text: 'Собрать всё самому по видео',
+        effects: { money: -15000, stress: 16, health: -4 },
+        logText: 'Три детали остались лишними. Машина завелась со второй попытки и чужого толчка.',
+        logKind: 'neutral',
+      },
+      {
+        text: 'Оставить как есть',
+        effects: { stress: 8, health: -2 },
+        logText: 'Дверь снова заклинило. Ты решил заняться этим после зарплаты.',
+        logKind: 'bad',
+      },
+    ],
+  },
+  {
+    id: 'garage_son_shelf',
+    minAge: 56,
+    maxAge: 70,
+    weight: 18,
+    requiredTags: ['asset:garage_repaired'],
+    title: 'Полка для чужих вещей',
+    text: 'В гараже освобождается полка. Ребёнок, который когда-то сидел на капоте, теперь просит место для своих зимних шин.',
+    choices: [
+      {
+        text: 'Освободить полку и остаться помочь',
+        effects: { stress: -8, social: 8, familyDecayDelta: -2, addMemory: { age: 0, id: 'garage_shelf', text: 'Полка в гараже, на которой уместились чужие зимние шины и старые банки.', category: 'family', emotionalWeight: 8 } },
+        logText: 'Пыль поднялась столбом. Вечером в гараже стало тесно, но не одиноко.',
+        logKind: 'good',
+      },
+      {
+        text: 'Отдать гараж и переехать ближе к сервису',
+        effects: { money: 90000, stress: -5, familyDecayDelta: 1 },
+        logText: 'Ключи передали молодому соседу. Он обещал не менять замок без предупреждения.',
+        logKind: 'neutral',
+      },
+      {
+        text: 'Закрыть гараж и не возвращаться',
+        effects: { stress: 5, social: -6, familyDecayDelta: 1 },
+        logText: 'Замок щёлкнул. Внутри остались инструменты, которыми уже некому было пользоваться.',
+        logKind: 'bad',
+      },
+    ],
+  },
 ]
 
 export const EVENTS_BY_ID: Record<string, GameEvent> = Object.fromEntries(

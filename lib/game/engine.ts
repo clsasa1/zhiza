@@ -12,6 +12,8 @@ import type {
   EraConfig,
   EraId,
   FamilyBackground,
+  BirthEraId,
+  PsychologicalVerdictInput,
 } from './types'
 import { EVENTS, EVENTS_BY_ID } from './events'
 
@@ -19,7 +21,13 @@ import { EVENTS, EVENTS_BY_ID } from './events'
 const PARENTAL_ALLOWANCE = 20_000
 const DEBT_THRESHOLD = -100_000
 const DEBT_STRESS_PER_YEAR = 10
-const MAX_AGE = 45
+const MAX_AGE = 75
+
+const BIRTH_YEAR_BY_ERA: Record<BirthEraId, number> = {
+  perestroika: 1985,
+  early_nineties: 1993,
+  late_nineties: 1998,
+}
 
 export const ERAS: EraConfig[] = [
   {
@@ -95,6 +103,22 @@ export function cityLabel(city: CityType): string {
   return CITY_LABELS[city]
 }
 
+/** Stable, privacy-safe payload for an optional server-side LLM verdict. */
+export function buildPsychologicalVerdictInput(
+  state: LifeState,
+): PsychologicalVerdictInput {
+  return {
+    age: state.age,
+    birthYear: state.birthYear,
+    cityType: state.cityType,
+    tags: [...state.tags],
+    familyDecay: state.familyDecay,
+    memories: state.memories.slice(0, 12).map((memory) => ({ ...memory })),
+    metrics: { ...state.metrics },
+    timeline: state.timeline.slice(-20).map((entry) => ({ ...entry })),
+  }
+}
+
 export function eraForYear(year: number): EraConfig {
   return (
     ERAS.find((era) => year >= era.startYear && year <= era.endYear) ??
@@ -138,9 +162,16 @@ function cloneState(state: LifeState): LifeState {
 }
 
 // ─────────────────────────────── Инициализация
-export function createNewLife(): LifeState {
-  const cityType = pick<CityType>(['metropolis', 'industrial', 'provincial'])
-  const birthYear = randInt(1985, 1988)
+export function createNewLife(options?: {
+  birthEra?: BirthEraId
+  birthYear?: number
+  cityType?: CityType
+}): LifeState {
+  const birthEra = options?.birthEra ?? 'perestroika'
+  const cityType = options?.cityType ?? pick<CityType>(['metropolis', 'industrial', 'provincial'])
+  const birthYear = options?.birthYear ?? (
+    birthEra === 'perestroika' ? randInt(1985, 1988) : BIRTH_YEAR_BY_ERA[birthEra]
+  )
   const familyBackground = pick<FamilyBackground>([
     'working_class',
     'intelligentsia',
@@ -158,6 +189,7 @@ export function createNewLife(): LifeState {
   const state: LifeState = {
     age: 0,
     birthYear,
+    birthEra,
     currentYear: birthYear,
     season: 'зима',
     familyBackground,
@@ -287,13 +319,26 @@ function applyPassiveTick(state: LifeState): void {
         ? (state.metrics.stress < 60 ? 3 : 0)
         : state.age <= 35
           ? 0
-          : -1
+          : state.age <= 55
+            ? -1
+            : state.age <= 65
+              ? -2
+              : -3
   const lifestylePenalty =
     state.age >= 36
       ? (state.tags.includes('status:kurit') ? 1 : 0) +
         (state.tags.includes('status:pyet') ? 1 : 0)
       : 0
   const disabilityPenalty = state.tags.includes('trait:invalidnost') ? 1 : 0
+  if (state.age >= 60 && !state.tags.includes('status:aging_body')) {
+    state.tags.push('status:aging_body')
+    state.timeline.push({
+      age: state.age,
+      year: state.currentYear,
+      text: 'Тело стало отдельным собеседником: лестница, давление и список таблеток.',
+      kind: 'milestone',
+    })
+  }
   state.metrics.health = clamp(
     state.metrics.health + biologicalChange + city.healthPerYear - lifestylePenalty - disabilityPenalty,
   )
@@ -367,10 +412,10 @@ function checkDeath(state: LifeState): boolean {
   if (state.age >= MAX_AGE) {
     // Этап 0 заканчивается на 45 годах.
     state.isDead = true
-    state.deathReason = `Конец Этапа 0 (MVP): персонаж дожил до ${MAX_AGE} лет`
+    state.deathReason = `Жизнь завершилась в ${MAX_AGE} лет`
     state.timeline.push({
       age: state.age,
-      text: 'Сорок пять лет позади. Здесь заканчивается Этап 0 — но не сама жизнь.',
+      text: 'Семьдесят пять лет позади. В ленте осталось больше воспоминаний, чем планов.',
       kind: 'milestone',
     })
     return true
