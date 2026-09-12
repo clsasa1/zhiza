@@ -34,12 +34,14 @@ class AudioManager {
 
     const nextTrack = new Howl({
       src: [this.tracks[key]],
-      html5: true,
+      // Decode ambient loops into Web Audio instead of relying on streamed
+      // HTML5 audio, which can underrun at loop boundaries.
+      html5: false,
+      preload: true,
       loop: true,
       volume: 0,
       onload: () => {
         if (this.currentTrack !== nextTrack || this.muted) return
-        nextTrack.play()
         nextTrack.fade(0, this.volume, 2000)
       },
       onloaderror: (_id, error) => {
@@ -59,9 +61,8 @@ class AudioManager {
     this.currentTrack = nextTrack
     this.currentKey = key
 
-    if (!this.muted && nextTrack.state() === 'loaded') {
+    if (!this.muted) {
       nextTrack.play()
-      nextTrack.fade(0, this.volume, 2000)
     }
   }
 
