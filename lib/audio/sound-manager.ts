@@ -6,13 +6,24 @@ class AudioManager {
   private currentTrack: Howl | null = null
   private currentKey: AudioTrackKey | null = null
   private muted = false
-  private readonly volume = 0.3
+  private volume = 0.3
+  private initialized = false
   private readonly tracks: Record<AudioTrackKey, string> = {
     intro: '/audio/ambient_intro.mp3',
     era_90s: '/audio/ambient_90s.mp3',
     era_2000s: '/audio/ambient_2000s.mp3',
     era_modern: '/audio/ambient_modern.mp3',
     oldage: '/audio/ambient_oldage.mp3',
+  }
+
+  init(): void {
+    if (this.initialized || typeof window === 'undefined') return
+    const savedVolume = Number.parseFloat(window.localStorage.getItem('zhiza_audio_volume') ?? '')
+    if (Number.isFinite(savedVolume)) this.volume = Math.max(0, Math.min(1, savedVolume))
+    const savedMute = window.localStorage.getItem('zhiza_audio_muted')
+      ?? window.localStorage.getItem('zhiza-audio-muted')
+    if (savedMute !== null) this.muted = savedMute === 'true'
+    this.initialized = true
   }
 
   playTrack(key: AudioTrackKey): void {
@@ -48,6 +59,7 @@ class AudioManager {
 
   toggleMute(): boolean {
     this.muted = !this.muted
+    this.persistMute()
     if (this.muted) {
       this.currentTrack?.fade(this.currentTrack.volume(), 0, 500)
       window.setTimeout(() => this.currentTrack?.pause(), 500)
@@ -63,8 +75,26 @@ class AudioManager {
     this.toggleMute()
   }
 
+  setVolume(value: number): void {
+    this.volume = Math.max(0, Math.min(1, value))
+    if (this.currentTrack && !this.muted) this.currentTrack.volume(this.volume)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('zhiza_audio_volume', this.volume.toString())
+    }
+  }
+
+  getVolume(): number {
+    return this.volume
+  }
+
   getMutedStatus(): boolean {
     return this.muted
+  }
+
+  private persistMute(): void {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('zhiza_audio_muted', String(this.muted))
+    }
   }
 }
 
