@@ -53,6 +53,7 @@ export function Game() {
           onStart={start}
           onAudioStart={() => {
             audioManager.init()
+            audioManager.setMuted(false)
             audioManager.playTrack('intro')
             setAudioStarted(true)
           }}
