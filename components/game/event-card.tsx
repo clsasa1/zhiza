@@ -1,4 +1,5 @@
 import type { GameChoice, GameEvent, LifeState, Season } from '@/lib/game/types'
+import { HISTORICAL_CONTEXT } from '@/lib/game/world-history'
 
 export function EventCard({
   event,
@@ -20,6 +21,9 @@ export function EventCard({
         <h2 className="font-sans text-xl font-bold uppercase tracking-tight text-foreground">
           {event.title}
         </h2>
+        <p className="mt-1 text-xs italic text-zinc-400">
+          {HISTORICAL_CONTEXT[state.currentYear]}
+        </p>
       </div>
 
       <p className="px-5 py-5 text-pretty font-mono text-sm leading-relaxed text-foreground/90">
