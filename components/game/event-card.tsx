@@ -1,13 +1,15 @@
-import type { GameChoice, GameEvent, Season } from '@/lib/game/types'
+import type { GameChoice, GameEvent, LifeState, Season } from '@/lib/game/types'
 
 export function EventCard({
   event,
   onChoose,
   season,
+  state,
 }: {
   event: GameEvent
   onChoose: (choice: GameChoice) => void
   season: Season
+  state: LifeState
 }) {
   return (
     <div className="flex flex-col border border-border bg-card">
@@ -21,7 +23,7 @@ export function EventCard({
       </div>
 
       <p className="px-5 py-5 text-pretty font-mono text-sm leading-relaxed text-foreground/90">
-        {event.text}
+        {typeof event.text === 'function' ? event.text(state) : event.text}
       </p>
 
       <div className="flex flex-col gap-px border-t border-border bg-border">

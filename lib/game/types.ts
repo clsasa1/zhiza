@@ -185,6 +185,6 @@ export interface GameEvent {
   /** If true, this event is only reachable via the echo queue. */
   echoOnly?: boolean
   title: string
-  text: string
+  text: string | ((state: LifeState) => string)
   choices: GameChoice[]
 }

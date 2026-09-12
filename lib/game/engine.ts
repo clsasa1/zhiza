@@ -497,16 +497,17 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
 
 function selectEvent(state: LifeState): GameEvent | null {
   const adaptEvent = (event: GameEvent): GameEvent => {
-    if (event.id !== 'mother_train_bag' || state.tags.includes('status:dorm')) {
-      return event
-    }
     return {
       ...event,
-      choices: event.choices.map((choice) =>
-        choice.text === 'Забрать и тащить в общагу'
-          ? { ...choice, text: 'Забрать и тащить на съёмную квартиру' }
-          : choice,
-      ),
+      text: typeof event.text === 'function' ? event.text(state) : event.text,
+      choices:
+        event.id === 'mother_train_bag' && !state.tags.includes('status:dorm')
+          ? event.choices.map((choice) =>
+              choice.text === 'Забрать и тащить в общагу'
+                ? { ...choice, text: 'Забрать и тащить на съёмную квартиру' }
+                : choice,
+            )
+          : event.choices,
     }
   }
   // 1. Приоритет — эхо-события, чей targetAge совпал.
@@ -516,7 +517,7 @@ function selectEvent(state: LifeState): GameEvent | null {
     const echoEvent = EVENTS_BY_ID[entry.eventId]
     if (echoEvent && eventMatches(state, echoEvent, true)) {
       state.echoQueue.splice(dueIndex, 1)
-      return echoEvent
+      return adaptEvent(echoEvent)
     }
     entry.targetAge += 1
   }
@@ -554,8 +555,20 @@ export function tickYear(state: LifeState): {
   next.age += 1
   next.season = randomSeason()
   next.currentYear = next.birthYear + next.age
-  if (next.age === 18) {
-    next.tags = next.tags.filter((tag) => tag !== 'status:high_school' && tag !== 'status:school_track')
+  if (next.age >= 18) {
+    next.tags = next.tags.filter(
+      (tag) =>
+        tag !== 'status:high_school' &&
+        tag !== 'status:school' &&
+        tag !== 'status:school_track',
+    )
+  }
+  if (next.age >= 23) {
+    const hadStudentTag = next.tags.some((tag) => tag.includes('student'))
+    next.tags = next.tags.filter((tag) => !tag.includes('student'))
+    if (hadStudentTag && !next.tags.includes('status:graduate')) {
+      next.tags.push('status:graduate')
+    }
   }
   updateParentStatus(next)
 
