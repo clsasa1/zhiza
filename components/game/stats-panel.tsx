@@ -34,7 +34,13 @@ export function StatsPanel({ state }: { state: LifeState }) {
 
       <div className="grid grid-cols-2 gap-x-6 gap-y-3 px-4 py-4 sm:grid-cols-3">
         <MetricBar label="Здоровье" value={metrics.health} color="var(--chart-4)" />
-        <MetricBar label="Стресс" value={metrics.stress} color="var(--chart-1)" inverted />
+        <MetricBar
+          label="Стресс"
+          value={metrics.stress}
+          color="var(--chart-1)"
+          inverted
+          critical={metrics.stress >= 80}
+        />
         {metrics.intellect !== undefined && (
           <MetricBar label="Интеллект" value={metrics.intellect} color="var(--chart-3)" />
         )}

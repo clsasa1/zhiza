@@ -12,11 +12,23 @@ export function EventCard({
   season: Season
   state: LifeState
 }) {
+  const stressCrisis = state.metrics.stress >= 80
+  const budgetCrisis = (state.metrics.money ?? 0) <= -50_000
+  const healthCrisis = state.metrics.health <= 20
+  const crisisLabel = stressCrisis
+    ? 'Событие · на пределе сил'
+    : budgetCrisis
+      ? 'Событие · крах бюджета'
+      : healthCrisis
+        ? 'Событие · тело сдаёт'
+        : `Событие · ${season}`
+  const crisis = stressCrisis || budgetCrisis || healthCrisis
+
   return (
-    <div className="flex flex-col border border-border bg-card">
+    <div className={`flex flex-col border bg-card ${crisis ? 'border-red-900/50 animate-pulse' : 'border-border'}`}>
       <div className="border-b border-primary/60 bg-primary/10 px-5 py-3">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-primary">
-          Событие · {season}
+        <span className={`font-mono text-[10px] uppercase tracking-wider ${crisis ? 'text-red-400' : 'text-primary'}`}>
+          {crisisLabel}
         </span>
         <h2 className="font-sans text-xl font-bold uppercase tracking-tight text-foreground">
           {event.title}
