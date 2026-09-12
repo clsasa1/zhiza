@@ -47,6 +47,8 @@ const TAG_LABELS: Record<string, string> = {
   'status:graduate': 'Высшее образование',
   'status:rented_home': 'Съёмное жильё',
   'status:job_factory': 'Заводская работа',
+  'status:remote_work': 'Удалённая работа',
+  'status:it_worker': 'IT-специалист',
   'status:pyet': 'Пьёт',
   'asset:kvartira': 'Квартира',
   'asset:dolya_v_biznese': 'Доля в бизнесе',

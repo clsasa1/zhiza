@@ -559,21 +559,62 @@ export const EVENTS: GameEvent[] = [
     id: 'remote_it_offer',
     minAge: 32,
     maxAge: 40,
-    requiredTags: ['trait:komputerschik'],
+    conditionAny: [
+      { requiredTags: ['trait:komputerschik'] },
+      { requiredTags: ['status:job_factory'] },
+      { requiredTags: ['trait:boss'] },
+      { requiredTags: ['status:boss'] },
+    ],
     title: 'Работа без переезда',
-    text: 'Столичная IT-компания ищет человека, который понимает и компьютеры, и жизнь вне Садового кольца.',
+    text: (state) => {
+      const runsProduction =
+        state.tags.includes('status:job_factory') ||
+        state.tags.includes('trait:boss') ||
+        state.tags.includes('status:boss')
+      return runsProduction
+        ? 'Хедхантеры выходят на тебя в мессенджере: столичный IT-интегратор автоматизирует заводы и ищет человека, знающего реальное производство изнутри. Предлагают московскую зарплату на удалёнке. Но это значит бросить свой цех, статус начальника и начать всё с нуля в чужой корпоративной среде.'
+        : 'Столичная IT-компания ищет человека, который понимает и компьютеры, и жизнь вне Садового кольца.'
+    },
     choices: [
       {
-        text: 'Пройти собеседование',
-        effects: { money: 60000, intellect: 8, stress: 10, addTags: ['status:freelance'] },
-        logText: 'Работа удалённая, зарплата столичная, а чайник всё ещё провинциальный.',
+        text: (state) =>
+          state.tags.includes('status:job_factory') ||
+          state.tags.includes('trait:boss') ||
+          state.tags.includes('status:boss')
+            ? 'Рискнуть: уйти с завода и принять столичный оффер'
+            : 'Пройти собеседование и принять удалённый оффер',
+        effects: {
+          money: 45000,
+          intellect: 8,
+          stress: 20,
+          social: -10,
+          removeTags: ['status:job_factory', 'trait:boss', 'status:boss'],
+          addTags: ['status:remote_work', 'status:it_worker'],
+        },
+        logText: 'Положил заявление на стол директору. Мужики в курилке крутили пальцем у виска, но первый же аванс из Москвы перекрыл две заводские зарплаты.',
+        logKind: 'milestone',
+      },
+      {
+        text: (state) =>
+          state.tags.includes('status:job_factory') ||
+          state.tags.includes('trait:boss') ||
+          state.tags.includes('status:boss')
+            ? 'Показать оффер руководству завода и потребовать прибавку'
+            : 'Показать оффер руководству и попросить лучшие условия',
+        effects: { money: 15000, intellect: 5 },
+        logText: 'Пришёл к директору с открытым предложением на экране. Поорали, но оклад на заводе подняли: терять толкового начальника цеха побоялись.',
         logKind: 'good',
       },
       {
-        text: 'Остаться на привычном месте',
-        effects: { stress: -6, social: 4 },
-        logText: 'Новая возможность закрыта. Зато никто не пишет в рабочий чат ночью.',
-        logKind: 'neutral',
+        text: (state) =>
+          state.tags.includes('status:job_factory') ||
+          state.tags.includes('trait:boss') ||
+          state.tags.includes('status:boss')
+            ? 'Отказаться: цех держится на мне, а мониторы — это баловство'
+            : 'Отказаться и остаться на привычном месте',
+        effects: { social: 15, stress: -10 },
+        logText: 'Ответил отказом. Свой цех, запах металла и живые люди оказались дороже чужих таблиц и созвонов.',
+        logKind: 'good',
       },
     ],
   },
