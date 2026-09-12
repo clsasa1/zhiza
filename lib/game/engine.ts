@@ -556,10 +556,9 @@ function selectEvent(state: LifeState): GameEvent | null {
       ['mature_daily_routine_work', 'Обычная смена', 'Рабочий день закончился без происшествий. Усталость осталась, зато зарплата снова пришла вовремя.'],
       ['mature_daily_routine_memory', 'Старые фотографии', 'Вечером нашлась коробка со старыми фотографиями. Прошлое не просило ничего, кроме нескольких минут внимания.'],
     ] as const
-    const variant = fallbackVariants.find(([id]) => !state.seenEvents.includes(id))
-    if (!variant) return null
+    const variant = fallbackVariants[state.age % fallbackVariants.length]
     return adaptEvent({
-      id: variant[0],
+      id: `${variant[0]}_${state.age}`,
       minAge: 42,
       maxAge: MAX_AGE,
       repeatable: false,
