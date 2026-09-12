@@ -516,13 +516,21 @@ function selectEvent(state: LifeState): GameEvent | null {
       ...event,
       text: typeof event.text === 'function' ? event.text(state) : event.text,
       choices:
-        event.id === 'mother_train_bag' && !state.tags.includes('status:dorm')
-          ? event.choices.map((choice) =>
-              choice.text === 'Забрать и тащить в общагу'
-                ? { ...choice, text: 'Забрать и тащить на съёмную квартиру' }
-                : choice,
-            )
-          : event.choices,
+        event.choices.map((choice) => {
+          const adaptedChoice =
+            event.id === 'mother_train_bag' &&
+            !state.tags.includes('status:dorm') &&
+            choice.text === 'Забрать и тащить в общагу'
+              ? { ...choice, text: 'Забрать и тащить на съёмную квартиру' }
+              : choice
+          return {
+            ...adaptedChoice,
+            text:
+              typeof adaptedChoice.text === 'function'
+                ? adaptedChoice.text(state)
+                : adaptedChoice.text,
+          }
+        }),
     }
   }
   // 1. Приоритет — эхо-события, чей targetAge совпал.

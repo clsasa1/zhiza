@@ -44,7 +44,7 @@ export function EventCard({
               <span className="font-mono text-sm text-primary transition-transform duration-200 ease-out group-hover:translate-x-1">{`>`}</span>
               <span className="flex-1">
                 <span className="font-mono text-sm font-medium text-foreground group-hover:text-primary">
-                  {choice.text}
+                  {typeof choice.text === 'function' ? choice.text(state) : choice.text}
                 </span>
               </span>
             </span>

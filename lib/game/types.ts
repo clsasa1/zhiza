@@ -164,7 +164,7 @@ export interface ChoiceEffects {
 }
 
 export interface GameChoice {
-  text: string
+  text: string | ((state: LifeState) => string)
   effects: ChoiceEffects
   metricConditions?: MetricConditions
   echo?: { eventId: string; minDelay: number; maxDelay: number }

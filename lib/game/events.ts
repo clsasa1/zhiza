@@ -8,6 +8,43 @@ function getCareerPhrase(state: LifeState): string {
   return 'и ты уже взрослый самостоятельный мужик'
 }
 
+const getUrgentObligation = (state: LifeState): {
+  text: string
+  choice2Text: string
+  choice3Text: string
+} => {
+  const hasFamily = state.tags.includes('rel:married') || state.tags.includes('rel:child')
+  const isFreelanceOrBiz =
+    state.tags.includes('status:job_business') || state.tags.includes('status:freelance')
+
+  if (hasFamily && isFreelanceOrBiz) {
+    return {
+      text: 'В кармане разрывается телефон: клиент требует закрыть правки по контракту, а дома ждут семья и быт.',
+      choice2Text: '«Пап, контракт горит». Оставить ему 15 000 ₽ на новую оптику и закрыть дела',
+      choice3Text: 'Пообещать вернуться через неделю и сорваться к семье и работе',
+    }
+  }
+  if (hasFamily) {
+    return {
+      text: 'В кармане вибрирует телефон: дома ждут с покупками, ребёнок приболел, а завтра утром снова на смену.',
+      choice2Text: '«Пап, дома аврал». Сунуть ему 10 000 ₽ на лекарства и электрика, пообещав позвонить',
+      choice3Text: 'Чмокнуть в щёку, сказать «я на связи» и побежать на семейный автобус',
+    }
+  }
+  if (isFreelanceOrBiz) {
+    return {
+      text: 'В кармане горит рабочий чат: сорвалась поставка, если не разрулить за два часа — влетишь на крупную неустойку.',
+      choice2Text: '«Пап, бизнес горит». Перевести ему денег на карту и мчать на склад',
+      choice3Text: 'Развести руками: «Дела, пап», запрыгнуть в машину и уехать на созвон',
+    }
+  }
+  return {
+    text: 'Через час начинается смена / дежурство, а на парковке ждёт приятель, с которым договорились поехать по делам.',
+    choice2Text: '«Пап, времени в обрез». Оставить денег на нормальный инструмент и убежать',
+    choice3Text: 'Сослаться на срочные дела в городе и пообещать заглянуть в следующий раз',
+  }
+}
+
 // Connected event database for ages 0–30.
 // Several chains demonstrate the echo mechanic:
 //   - Детская травма (4–6)  -> echo_trauma_adult (~25)
@@ -541,11 +578,45 @@ export const EVENTS: GameEvent[] = [
     ],
   },
   {
+    id: 'marriage_registration',
+    minAge: 20,
+    maxAge: 32,
+    requiredTags: ['rel:in_relationship'],
+    forbiddenTags: ['rel:married', 'status:divorced'],
+    title: 'Роспись в ЗАГСе',
+    text: 'В коридоре ЗАГСа пахнет цветами, мокрыми пальто и дешёвым шампанским. Вы ставите подписи и выходите в город уже семьёй.',
+    choices: [
+      {
+        text: 'Поставить подпись и отметить дома',
+        effects: {
+          money: -30000,
+          stress: 8,
+          familyDecayDelta: -2,
+          addTags: ['rel:married'],
+        },
+        logText: 'Подписи поставлены. Вечером на кухне тесно от цветов, гостей и нового общего плана.',
+        logKind: 'milestone',
+      },
+      {
+        text: 'Устроить большую свадьбу',
+        effects: {
+          money: -120000,
+          stress: 18,
+          social: 10,
+          familyDecayDelta: -2,
+          addTags: ['rel:married'],
+        },
+        logText: 'Праздник закончился под утро. Теперь у вас есть фотографии, долги и общая фамилия.',
+        logKind: 'milestone',
+      },
+    ],
+  },
+  {
     id: 'child_born',
     minAge: 28,
-    maxAge: 42,
-    requiredAnyTags: ['rel:in_relationship', 'rel:married', 'rel:pervaya_lyubov'],
-    forbiddenTags: ['rel:child_born', 'status:breakup', 'status:divorced'],
+    maxAge: 38,
+    requiredTags: ['rel:married'],
+    forbiddenTags: ['rel:child', 'rel:child_born', 'status:breakup', 'status:divorced'],
     title: 'Рождение ребёнка',
     text: 'В доме появляется человек размером с пакет молока, который не признаёт выходных, тишины и прежнего бюджета.',
     choices: [
@@ -556,7 +627,7 @@ export const EVENTS: GameEvent[] = [
           stress: 18,
           social: 12,
           familyDecayDelta: -2,
-          addTags: ['rel:child_born', 'rel:married'],
+          addTags: ['rel:child', 'rel:child_born'],
           addMemory: {
             age: 0,
             id: 'first_child_night',
@@ -575,7 +646,7 @@ export const EVENTS: GameEvent[] = [
           stress: 28,
           social: -8,
           familyDecayDelta: 1,
-          addTags: ['rel:child_born', 'rel:married'],
+          addTags: ['rel:child', 'rel:child_born'],
         },
         logText: 'Карьера не остановилась. Семья заметила, что тебя тоже иногда нет.',
         logKind: 'bad',
@@ -698,7 +769,7 @@ export const EVENTS: GameEvent[] = [
     id: 'divorce',
     minAge: 32,
     maxAge: 45,
-    requiredTags: ['rel:child_born'],
+    requiredTags: ['rel:child'],
     metricConditions: { stress: { min: 75 } },
     forbiddenTags: ['status:divorced'],
     title: 'Развод',
@@ -790,7 +861,7 @@ export const EVENTS: GameEvent[] = [
     id: 'childhood_things',
     minAge: 30,
     maxAge: 30,
-    requiredTags: ['rel:child_born'],
+    requiredTags: ['rel:child'],
     parentStatuses: ['healthy', 'aging', 'ill'],
     title: 'Детские вещи',
     text: 'Дочка засыпает на руках, уткнувшись носом в плечо. Ты внезапно понимаешь, что отец держал тебя точно так же тридцать лет назад в холодной хрущёвке.',
@@ -2161,7 +2232,10 @@ export const EVENTS: GameEvent[] = [
     seasons: ['весна', 'осень'],
     weight: 20,
     title: 'Гаражные блёсны',
-    text: 'Суббота, сырой гаражный кооператив. Ты заскочил на двадцать минут забрать резину и видишь, как сдал отец: очки на проволочке, дрожащие пальцы перебирают дедовские блёсны, чайник на плитке шумит. «Оставайся, — негромко говорит он, глядя в верстак. — Поможешь полку перевесить, да чайку попьём, поговорим». В кармане вибрирует телефон: клиент ждёт закрытия срочной сделки на 60 000 ₽, а дома жена одна с температурящим ребёнком.',
+    text: (state) => {
+      const obligation = getUrgentObligation(state)
+      return `Суббота, сырой гаражный кооператив. Ты заскочил на двадцать минут забрать резину и видишь, как сдал отец: очки на проволочке, дрожащие пальцы перебирают дедовские блёсны, чайник на плитке шумит. «Оставайся, — негромко говорит он, глядя в верстак. — Поможешь полку перевесить, да чайку попьём, поговорим». ${obligation.text}`
+    },
     choices: [
       {
         text: 'Выключить телефон, запереть ворота изнутри и остаться',
@@ -2170,13 +2244,13 @@ export const EVENTS: GameEvent[] = [
         logKind: 'good',
       },
       {
-        text: '«Пап, клиент горит, на кону контракт». Сунуть ему 15 000 ₽ на новую оптику и электрика',
+        text: (state) => getUrgentObligation(state).choice2Text,
         effects: { money: 20000, familyDecayDelta: 1, stress: -5 },
         logText: 'Закрыл рабочие хвосты, оставил отцу денег на обустройство. Он молча кивнул и отвернулся к верстаку.',
         logKind: 'neutral',
       },
       {
-        text: 'Сказать, что вернёшься в следующие выходные, и сорваться спасать дом и дела',
+        text: (state) => getUrgentObligation(state).choice3Text,
         effects: { stress: 15, familyDecayDelta: 2 },
         echo: { eventId: 'echo_father_missed_chance', minDelay: 1, maxDelay: 2 },
         logText: 'Уехал в спешке под обещание вернуться через неделю. Вернуться получилось только через полгода.',
