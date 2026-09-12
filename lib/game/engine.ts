@@ -547,16 +547,24 @@ function selectEvent(state: LifeState): GameEvent | null {
 
   // Обычное событие из пула. Повторяемые бытовые события не дают годам пропадать.
   const pool = EVENTS.filter((ev) => eventMatches(state, ev))
-  if (pool.length === 0 && state.age >= 46) {
+  if (pool.length === 0 && state.age >= 42) {
+    const fallbackVariants = [
+      ['mature_daily_routine_home', 'Тихий вечер дома', 'После работы квартира встречает тишиной, квитанциями и непрочитанными сообщениями.'],
+      ['mature_daily_routine_clinic', 'Очередь по записи', 'Утро ушло на анализы и талончик к терапевту. В зрелом возрасте профилактика становится отдельным делом.'],
+      ['mature_daily_routine_family', 'Короткий звонок', 'Позвонил близким без повода. Разговор оказался коротким, но день перестал казаться пустым.'],
+      ['mature_daily_routine_dacha', 'Дачный выходной', 'На даче ждут покосившийся забор, чайник и список мелких дел, который никогда не заканчивается.'],
+      ['mature_daily_routine_work', 'Обычная смена', 'Рабочий день закончился без происшествий. Усталость осталась, зато зарплата снова пришла вовремя.'],
+      ['mature_daily_routine_memory', 'Старые фотографии', 'Вечером нашлась коробка со старыми фотографиями. Прошлое не просило ничего, кроме нескольких минут внимания.'],
+    ] as const
+    const variant = fallbackVariants.find(([id]) => !state.seenEvents.includes(id))
+    if (!variant) return null
     return adaptEvent({
-      id: `mature_daily_routine_${state.age}`,
-      minAge: 46,
+      id: variant[0],
+      minAge: 42,
       maxAge: MAX_AGE,
       repeatable: false,
-      title: 'Зрелый день',
-      text: state.tags.includes('status:retired')
-        ? 'Утро начинается без будильника. Нужно забрать лекарства, позвонить родственникам и решить, чем занять длинный день.'
-        : 'Рабочий день закончился раньше обычного: спина ноет, телефон молчит, а дома ждут квитанции, лекарства и непроговорённые разговоры.',
+      title: variant[1],
+      text: variant[2],
       choices: [
         {
           text: 'Заняться делами и позвонить близким',
