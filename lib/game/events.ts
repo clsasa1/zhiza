@@ -1499,7 +1499,7 @@ export const EVENTS: GameEvent[] = [
       },
       {
         text: 'Дожимать 10–11 класс и готовиться к вузу',
-        effects: { setLifePath: 'office', intellect: 10, stress: 6, addTags: ['status:school_track'] },
+        effects: { setLifePath: 'office', intellect: 10, stress: 6, addTags: ['status:school_track', 'status:high_school'] },
         logText: 'После уроков остались задачи и тетрадь в клетку. Двор подождёт.',
         logKind: 'milestone',
       },
@@ -1580,13 +1580,13 @@ export const EVENTS: GameEvent[] = [
     choices: [
       {
         text: 'Идти на сложный технический факультет',
-        effects: { intellect: 12, stress: 10, addTags: ['status:student_budget'] },
+        effects: { intellect: 12, stress: 10, addTags: ['status:student_budget', 'status:student', 'status:dorm'] },
         logText: 'Фамилия оказалась в списке. Общага ждала дальше по улице.',
         logKind: 'milestone',
       },
       {
         text: 'Взять платное место на экономике',
-        effects: { money: -30000, intellect: 8, addTags: ['status:student_paid'] },
+        effects: { money: -30000, intellect: 8, addTags: ['status:student_paid', 'status:student', 'status:dorm'] },
         logText: 'Договор подписали в кабинете с облупленной батареей. Теперь платить придётся каждый семестр.',
         logKind: 'neutral',
       },
@@ -2294,6 +2294,35 @@ export const EVENTS: GameEvent[] = [
         effects: { stress: 10, familyDecayDelta: 2 },
         logText: 'На дачу поехал сосед. Мама ответила коротко и больше не перезвонила.',
         logKind: 'bad',
+      },
+    ],
+  },
+  {
+    id: 'university_graduation',
+    minAge: 22,
+    maxAge: 23,
+    requiredAnyTags: ['status:student', 'status:student_budget', 'status:student_paid'],
+    weight: 24,
+    title: 'Защита диплома и выселение из общаги',
+    text: 'Диплом подписан. В комнате общаги осталась полоска от шкафа на стене и два пакета вещей, которые некуда больше складывать.',
+    choices: [
+      {
+        text: 'Съехать на съёмную квартиру',
+        effects: { money: -40000, stress: 12, removeTags: ['status:student', 'status:student_budget', 'status:student_paid', 'status:dorm'], addTags: ['status:graduate', 'status:rented_home'] },
+        logText: 'Ключи от комнаты сдали коменданту. Новая дверь закрывалась хуже, но была своей.',
+        logKind: 'milestone',
+      },
+      {
+        text: 'Вернуться к родителям',
+        effects: { stress: 8, familyDecayDelta: -2, removeTags: ['status:student', 'status:student_budget', 'status:student_paid', 'status:dorm'], addTags: ['status:graduate'] },
+        logText: 'Сумки поставили в родительской прихожей. Мама сразу спросила, голодный ли ты.',
+        logKind: 'neutral',
+      },
+      {
+        text: 'Искать работу с жильём',
+        effects: { stress: 18, removeTags: ['status:student', 'status:student_budget', 'status:student_paid', 'status:dorm'], addTags: ['status:graduate', 'status:job_factory'] },
+        logText: 'В объявлении обещали комнату при предприятии. До проходной ехать было сорок минут.',
+        logKind: 'neutral',
       },
     ],
   },

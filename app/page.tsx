@@ -8,7 +8,7 @@ export default function Page() {
           ЖИЗА
         </span>
         <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Этап 0 · 0–45 лет
+          Этап 0 · 0–70 лет
         </span>
       </div>
       <div className="w-full">

@@ -8,7 +8,7 @@ export type Tag =
   | `rel:${string}`
 
 export type CityType = 'metropolis' | 'industrial' | 'provincial'
-export const MAX_AGE = 75
+export const MAX_AGE = 70
 export type BirthEraId = 'perestroika' | 'early_nineties' | 'late_nineties'
 export type FamilyBackground =
   | 'working_class'
@@ -107,6 +107,7 @@ export interface LifeState {
   memories: MemoryArtifact[]
   lastFamilyActionAge?: number
   lastEventAges: Record<string, number>
+  lastBreakdownAge?: number
   activeSagas?: Record<string, { step: number; startAge: number }>
 }
 

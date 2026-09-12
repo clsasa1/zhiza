@@ -157,6 +157,7 @@ function cloneState(state: LifeState): LifeState {
     seenEvents: [...state.seenEvents],
     memories: state.memories.map((memory) => ({ ...memory })),
     lastEventAges: { ...state.lastEventAges },
+    lastBreakdownAge: state.lastBreakdownAge,
     activeSagas: state.activeSagas
       ? Object.fromEntries(
           Object.entries(state.activeSagas).map(([id, saga]) => [id, { ...saga }]),
@@ -321,16 +322,14 @@ function applyPassiveTick(state: LifeState): void {
   )
   const biologicalChange =
     state.age < 18
-      ? 5
-      : state.age <= 25
-        ? (state.metrics.stress < 60 ? 3 : 0)
-        : state.age <= 35
+      ? 2
+      : state.age <= 30
+        ? (state.metrics.stress < 50 ? 1 : 0)
+        : state.age <= 45
           ? 0
           : state.age <= 55
-            ? -1
-            : state.age <= 65
-              ? -2
-              : -3
+            ? -2
+            : -4
   const lifestylePenalty =
     state.age >= 36
       ? (state.tags.includes('status:kurit') ? 1 : 0) +
@@ -398,8 +397,13 @@ function applyPassiveTick(state: LifeState): void {
 
 function applyCriticalStress(state: LifeState): void {
   if (state.metrics.stress < 100) return
+  if (state.lastBreakdownAge !== undefined && state.age - state.lastBreakdownAge < 5) {
+    state.metrics.health = Math.max(10, state.metrics.health - 8)
+    return
+  }
   state.metrics.health = Math.max(20, clamp(state.metrics.health - 15))
-  state.metrics.stress = 75
+  state.metrics.stress = 60
+  state.lastBreakdownAge = state.age
   state.timeline.push({
     age: state.age,
     text: 'Хроническое выгорание и стресс привели к нервному срыву и госпитализации.',
@@ -426,13 +430,18 @@ function checkDeath(state: LifeState): boolean {
     })
     return true
   }
+  if (state.age >= 65 && Math.random() < Math.min(0.9, 0.1 * (state.age - 63))) {
+    state.isDead = true
+    state.deathReason = 'Сердце не выдержало возрастной нагрузки.'
+    state.timeline.push({ age: state.age, text: state.deathReason, kind: 'fatal' })
+    return true
+  }
   if (state.age >= MAX_AGE) {
-    // Этап 0 заканчивается на 45 годах.
     state.isDead = true
     state.deathReason = `Жизнь завершилась в ${MAX_AGE} лет`
     state.timeline.push({
       age: state.age,
-      text: 'Семьдесят пять лет позади. В ленте осталось больше воспоминаний, чем планов.',
+      text: 'Семь десятилетий позади. В ленте осталось больше воспоминаний, чем планов.',
       kind: 'milestone',
     })
     return true
@@ -487,6 +496,19 @@ function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boole
 }
 
 function selectEvent(state: LifeState): GameEvent | null {
+  const adaptEvent = (event: GameEvent): GameEvent => {
+    if (event.id !== 'mother_train_bag' || state.tags.includes('status:dorm')) {
+      return event
+    }
+    return {
+      ...event,
+      choices: event.choices.map((choice) =>
+        choice.text === 'Забрать и тащить в общагу'
+          ? { ...choice, text: 'Забрать и тащить на съёмную квартиру' }
+          : choice,
+      ),
+    }
+  }
   // 1. Приоритет — эхо-события, чей targetAge совпал.
   const dueIndex = state.echoQueue.findIndex((e) => e.targetAge <= state.age)
   if (dueIndex !== -1) {
@@ -515,10 +537,10 @@ function selectEvent(state: LifeState): GameEvent | null {
   let roll = Math.random() * total
   for (const item of weighted) {
     roll -= item.weight
-    if (roll < 0)             return item.event
+    if (roll < 0)                 return adaptEvent(item.event)
   }
   const selected = weighted[weighted.length - 1].event
-  return selected
+  return adaptEvent(selected)
 }
 
 // ─────────────────────────────── tickYear
@@ -532,6 +554,9 @@ export function tickYear(state: LifeState): {
   next.age += 1
   next.season = randomSeason()
   next.currentYear = next.birthYear + next.age
+  if (next.age === 18) {
+    next.tags = next.tags.filter((tag) => tag !== 'status:high_school' && tag !== 'status:school_track')
+  }
   updateParentStatus(next)
 
   applyMetricUnlocks(next)
