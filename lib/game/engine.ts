@@ -220,6 +220,7 @@ export function createNewLife(options?: {
     familyDecay: 0,
     motherStatus: 'healthy',
     fatherStatus: familyBackground === 'single_mother' ? 'deceased' : 'healthy',
+    armyYearsLeft: 0,
     memories: [],
     lastEventAges: {},
     activeSagas: {},
@@ -451,6 +452,10 @@ function checkDeath(state: LifeState): boolean {
 
 // ─────────────────────────────── Подбор события
 function eventMatches(state: LifeState, ev: GameEvent, allowEcho = false): boolean {
+  const inArmy = state.tags.includes('status:in_army')
+  if (inArmy && !ev.requiresArmy && !ev.requiredTags?.includes('status:in_army')) return false
+  if (!inArmy && ev.requiresArmy) return false
+  if (ev.armyYear !== undefined && state.armyYearsLeft !== ev.armyYear) return false
   if (ev.echoOnly && !allowEcho) return false
   if (!ev.repeatable && state.seenEvents.includes(ev.id)) return false
   if (ev.repeatable) {
@@ -594,6 +599,14 @@ export function tickYear(state: LifeState): {
   if (checkDeath(next)) return { nextState: next, event: null }
 
   const event = selectEvent(next)
+  if (next.tags.includes('status:in_army') && next.armyYearsLeft !== undefined) {
+    next.armyYearsLeft -= 1
+    if (next.armyYearsLeft <= 0) {
+      next.tags = next.tags.filter((tag) => tag !== 'status:in_army')
+      if (!next.tags.includes('status:demob')) next.tags.push('status:demob')
+      if (!next.tags.includes('status:served_army')) next.tags.push('status:served_army')
+    }
+  }
   if (event && !event.echoOnly) {
     next.seenEvents.push(event.id)
     next.lastEventAges[event.id] = next.age
@@ -663,6 +676,23 @@ export function resolveChoice(
     next.tags.push('status:mother_deceased')
   }
   if (eff.setLifePath) next.lifePath = eff.setLifePath
+  if (eff.enterArmy) {
+    next.armyYearsLeft = next.currentYear < 2008 ? 2 : 1
+    next.tags = next.tags.filter((tag) =>
+      ![
+        'status:job_office',
+        'status:job_business',
+        'status:job_factory',
+        'status:delivery_business',
+        'status:freelance',
+        'status:student',
+        'status:student_budget',
+        'status:student_paid',
+        'status:dorm',
+      ].includes(tag),
+    )
+    if (!next.tags.includes('status:in_army')) next.tags.push('status:in_army')
+  }
 
   const logKind: TimelineEntry['kind'] = eff.fatal
     ? 'fatal'

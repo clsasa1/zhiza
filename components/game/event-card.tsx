@@ -31,7 +31,10 @@ export function EventCard({
       </p>
 
       <div className="flex flex-col gap-px border-t border-border bg-border">
-        {event.choices.map((choice, i) => (
+        {event.choices.filter((choice) => !choice.metricConditions || Object.entries(choice.metricConditions).every(([metric, range]) => {
+          const value = state.metrics[metric as keyof typeof state.metrics]
+          return typeof value === 'number' && (range.min === undefined || value >= range.min) && (range.max === undefined || value <= range.max)
+        })).map((choice, i) => (
           <button
             key={i}
             onClick={() => onChoose(choice)}

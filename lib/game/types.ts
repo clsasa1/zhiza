@@ -106,6 +106,7 @@ export interface LifeState {
   familyDecay: number
   motherStatus: IndividualParentStatus
   fatherStatus: IndividualParentStatus
+  armyYearsLeft?: number
   /** @deprecated Use motherStatus/fatherStatus. */
   parentStatus?: ParentStatus
   memories: MemoryArtifact[]
@@ -155,6 +156,7 @@ export interface ChoiceEffects {
   parentStatus?: ParentStatus
   motherStatus?: IndividualParentStatus
   fatherStatus?: IndividualParentStatus
+  enterArmy?: boolean
   setLifePath?: LifePath
   /** Marks the choice as immediately fatal. */
   fatal?: boolean
@@ -164,6 +166,7 @@ export interface ChoiceEffects {
 export interface GameChoice {
   text: string
   effects: ChoiceEffects
+  metricConditions?: MetricConditions
   echo?: { eventId: string; minDelay: number; maxDelay: number }
   logText: string
   logKind?: TimelineEntry['kind']
@@ -184,6 +187,8 @@ export interface GameEvent {
   motherStatuses?: IndividualParentStatus[]
   fatherStatuses?: IndividualParentStatus[]
   requiresMotherAlive?: boolean
+  requiresArmy?: boolean
+  armyYear?: number
   metricConditions?: MetricConditions
   requiredTags?: Tag[]
   requiredAnyTags?: Tag[]
