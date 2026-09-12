@@ -39,7 +39,6 @@ export function StatsPanel({ state }: { state: LifeState }) {
           value={metrics.stress}
           color="var(--chart-1)"
           inverted
-          critical={metrics.stress >= 80}
         />
         {metrics.intellect !== undefined && (
           <MetricBar label="Интеллект" value={metrics.intellect} color="var(--chart-3)" />

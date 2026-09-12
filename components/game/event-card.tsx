@@ -25,7 +25,7 @@ export function EventCard({
   const crisis = stressCrisis || budgetCrisis || healthCrisis
 
   return (
-    <div className={`flex flex-col border bg-card ${crisis ? 'border-red-900/50 animate-pulse' : 'border-border'}`}>
+    <div className={`flex flex-col border bg-card ${crisis ? 'border-red-900/50' : 'border-border'}`}>
       <div className="border-b border-primary/60 bg-primary/10 px-5 py-3">
         <span className={`font-mono text-[10px] uppercase tracking-wider ${crisis ? 'text-red-400' : 'text-primary'}`}>
           {crisisLabel}

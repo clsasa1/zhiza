@@ -49,13 +49,21 @@ export function Game() {
     return (
       <>
         <AudioController state={state} startAudio={audioStarted} />
-        <StartScreen onStart={start} />
+        <StartScreen
+          onStart={start}
+          onAudioStart={() => {
+            audioManager.init()
+            audioManager.playTrack('intro')
+            setAudioStarted(true)
+          }}
+        />
       </>
     )
   }
 
   function trackForState(state: LifeState): AudioTrackKey {
-    if (state.age >= 55) return 'oldage'
+    if (state.age >= 50) return 'oldage'
+    if (state.age < 25) return 'era_90s'
     if (state.currentYear < 2000) return 'era_90s'
     if (state.currentYear <= 2014) return 'era_2000s'
     return 'era_modern'
@@ -127,14 +135,19 @@ function IdleCard({ state }: { state: LifeState }) {
 
 function StartScreen({
   onStart,
+  onAudioStart,
 }: {
   onStart: (birthEra: BirthEraId, cityType: CityType, birthYear: number, familyBackground: FamilyBackground) => void
+  onAudioStart: () => void
 }) {
   const [fate, setFate] = useState(() => rollFate())
   const cityLabels: Record<CityType, string> = { metropolis: 'Миллионник', industrial: 'Моногород', provincial: 'Глубинка / ПГТ' }
   const familyLabels: Record<FamilyBackground, string> = { working_class: 'работяги', intelligentsia: 'интеллигенция', single_mother: 'мать-одиночка', commercial: 'коммерческая семья' }
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col items-center border border-border bg-card px-8 py-12 text-center">
+    <div
+      className="mx-auto flex w-full max-w-lg flex-col items-center border border-border bg-card px-8 py-12 text-center"
+      onPointerDownCapture={onAudioStart}
+    >
       <span className="font-mono text-[11px] uppercase tracking-[0.4em] text-primary">
         Текстовый симулятор жизни
       </span>

@@ -7,7 +7,8 @@ import { audioManager, type AudioTrackKey } from '@/lib/audio/sound-manager'
 
 function trackForState(state: LifeState | null): AudioTrackKey {
   if (!state) return 'intro'
-  if (state.age >= 55) return 'oldage'
+  if (state.age >= 50) return 'oldage'
+  if (state.age < 25) return 'era_90s'
   if (state.currentYear < 2000) return 'era_90s'
   if (state.currentYear <= 2014) return 'era_2000s'
   return 'era_modern'

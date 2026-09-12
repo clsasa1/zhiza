@@ -32,6 +32,7 @@ class AudioManager {
       return
     }
 
+    const oldTrack = this.currentTrack
     const nextTrack = new Howl({
       src: [this.tracks[key]],
       // Decode ambient loops into Web Audio instead of relying on streamed
@@ -42,6 +43,13 @@ class AudioManager {
       volume: 0,
       onload: () => {
         if (this.currentTrack !== nextTrack || this.muted) return
+        if (oldTrack) {
+          oldTrack.fade(oldTrack.volume(), 0, 1500)
+          window.setTimeout(() => {
+            oldTrack.stop()
+            oldTrack.unload()
+          }, 1600)
+        }
         if (!nextTrack.playing()) nextTrack.play()
         nextTrack.fade(0, this.volume, 2000)
       },
@@ -49,16 +57,6 @@ class AudioManager {
         console.warn(`Ambient track unavailable: ${this.tracks[key]}`, error)
       },
     })
-    const oldTrack = this.currentTrack
-
-    if (oldTrack) {
-      oldTrack.fade(oldTrack.volume(), 0, 1500)
-      window.setTimeout(() => {
-        oldTrack.stop()
-        oldTrack.unload()
-      }, 1600)
-    }
-
     this.currentTrack = nextTrack
     this.currentKey = key
 

@@ -549,11 +549,11 @@ function selectEvent(state: LifeState): GameEvent | null {
   const pool = EVENTS.filter((ev) => eventMatches(state, ev))
   if (pool.length === 0 && state.age >= 46) {
     return adaptEvent({
-      id: 'mature_daily_routine',
+      id: `mature_daily_routine_${state.age}`,
       minAge: 46,
       maxAge: MAX_AGE,
-      repeatable: true,
-      title: 'Обычный день после пятидесяти',
+      repeatable: false,
+      title: 'Зрелый день',
       text: state.tags.includes('status:retired')
         ? 'Утро начинается без будильника. Нужно забрать лекарства, позвонить родственникам и решить, чем занять длинный день.'
         : 'Рабочий день закончился раньше обычного: спина ноет, телефон молчит, а дома ждут квитанции, лекарства и непроговорённые разговоры.',
