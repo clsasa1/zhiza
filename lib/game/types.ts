@@ -8,6 +8,7 @@ export type Tag =
   | `rel:${string}`
 
 export type CityType = 'metropolis' | 'industrial' | 'provincial'
+export const MAX_AGE = 75
 export type BirthEraId = 'perestroika' | 'early_nineties' | 'late_nineties'
 export type FamilyBackground =
   | 'working_class'
@@ -39,6 +40,11 @@ export interface Metrics {
   intellect?: number
   social?: number
   money?: number
+}
+
+export interface ExtendedMetrics extends Metrics {
+  maxHealth?: number
+  pension?: number
 }
 
 export interface MetricCondition {
@@ -90,7 +96,7 @@ export interface LifeState {
   isDead: boolean
   deathReason?: string
   cityType: CityType
-  metrics: Metrics
+  metrics: ExtendedMetrics
   tags: Tag[]
   echoQueue: EchoEntry[]
   timeline: TimelineEntry[]
@@ -101,6 +107,22 @@ export interface LifeState {
   memories: MemoryArtifact[]
   lastFamilyActionAge?: number
   lastEventAges: Record<string, number>
+  activeSagas?: Record<string, { step: number; startAge: number }>
+}
+
+export interface LifeRunSummary {
+  id: string
+  age: number
+  birthYear: number
+  deathYear: number
+  cityType: CityType
+  familyBackground: FamilyBackground
+  lifePath?: LifePath
+  finalMoney: number
+  keyMemory?: string
+  deathReason: string
+  verdictTitle: string
+  verdictText: string
 }
 
 export interface PsychologicalVerdictInput {

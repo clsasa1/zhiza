@@ -15,14 +15,13 @@ import type {
   BirthEraId,
   PsychologicalVerdictInput,
 } from './types'
+import { MAX_AGE } from './types'
 import { EVENTS, EVENTS_BY_ID } from './events'
 
 // ─────────────────────────────── Balance constants
 const PARENTAL_ALLOWANCE = 20_000
 const DEBT_THRESHOLD = -100_000
 const DEBT_STRESS_PER_YEAR = 10
-const MAX_AGE = 75
-
 const BIRTH_YEAR_BY_ERA: Record<BirthEraId, number> = {
   perestroika: 1985,
   early_nineties: 1993,
@@ -158,6 +157,11 @@ function cloneState(state: LifeState): LifeState {
     seenEvents: [...state.seenEvents],
     memories: state.memories.map((memory) => ({ ...memory })),
     lastEventAges: { ...state.lastEventAges },
+    activeSagas: state.activeSagas
+      ? Object.fromEntries(
+          Object.entries(state.activeSagas).map(([id, saga]) => [id, { ...saga }]),
+        )
+      : undefined,
   }
 }
 
@@ -198,6 +202,8 @@ export function createNewLife(options?: {
     metrics: {
       health: base[cityType].health + randInt(-4, 4),
       stress: base[cityType].stress + randInt(-4, 4),
+      maxHealth: 100,
+      pension: 0,
     },
     tags:
       familyBackground === 'working_class'
@@ -213,6 +219,7 @@ export function createNewLife(options?: {
     parentStatus: 'healthy',
     memories: [],
     lastEventAges: {},
+    activeSagas: {},
     timeline: [
       {
         age: 0,
@@ -339,8 +346,16 @@ function applyPassiveTick(state: LifeState): void {
       kind: 'milestone',
     })
   }
-  state.metrics.health = clamp(
-    state.metrics.health + biologicalChange + city.healthPerYear - lifestylePenalty - disabilityPenalty,
+  const maxHealth =
+    state.age >= 60 ? 50 : state.age >= 45 ? 70 : 100
+  state.metrics.maxHealth = maxHealth
+  state.metrics.health = Math.min(
+    maxHealth,
+    clamp(
+      state.metrics.health + biologicalChange + city.healthPerYear - lifestylePenalty - disabilityPenalty,
+      0,
+      maxHealth,
+    ),
   )
   if (state.age < 18) return
 
@@ -354,7 +369,9 @@ function applyPassiveTick(state: LifeState): void {
 
   const parentalAllowance =
     state.age <= 21 ? PARENTAL_ALLOWANCE : 0
-  const income = salary + parentalAllowance
+  const pension = state.age >= 60 ? 15_000 : 0
+  state.metrics.pension = pension
+  const income = salary + parentalAllowance + pension
   const delta = income - Math.round(city.livingCost * era.livingCostMultiplier)
   state.metrics.money = (state.metrics.money ?? 0) + delta
 
@@ -551,7 +568,11 @@ export function resolveChoice(
   if (eff.health !== undefined) {
     const nextHealth = next.metrics.health + eff.health
     const minimumSafeHealth = !eff.fatal ? (next.age < 16 ? 15 : 10) : 0
-    next.metrics.health = clamp(Math.max(nextHealth, minimumSafeHealth))
+    const healthCap = next.metrics.maxHealth ?? 100
+    next.metrics.health = Math.min(
+      healthCap,
+      clamp(Math.max(nextHealth, minimumSafeHealth), 0, healthCap),
+    )
   }
   if (eff.stress !== undefined)
     next.metrics.stress = clamp(next.metrics.stress + eff.stress)
