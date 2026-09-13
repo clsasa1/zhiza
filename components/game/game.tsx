@@ -141,7 +141,7 @@ function StartScreen({
   onStart: (birthEra: BirthEraId, cityType: CityType, birthYear: number, familyBackground: FamilyBackground) => void
   onAudioStart: () => void
 }) {
-  const [fate, setFate] = useState(() => rollFate())
+  const [fate] = useState(() => rollFate())
   const cityLabels: Record<CityType, string> = { metropolis: 'Миллионник', industrial: 'Моногород', provincial: 'Глубинка / ПГТ' }
   const familyLabels: Record<FamilyBackground, string> = { working_class: 'работяги', intelligentsia: 'интеллигенция', single_mother: 'мать-одиночка', commercial: 'коммерческая семья' }
   return (
@@ -160,7 +160,7 @@ function StartScreen({
         которое догонит тебя годы спустя.
       </p>
       <div className="mt-8 w-full border border-primary/50 bg-primary/5 px-5 py-6 text-left">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-primary">Твой билет</span>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-primary">Точка отсчёта</span>
         <h2 className="mt-2 font-sans text-2xl font-bold uppercase text-foreground">{fate.year} год, {cityLabels[fate.cityType]}</h2>
         <p className="mt-3 font-mono text-sm leading-relaxed text-muted-foreground">{fate.punch}</p>
         <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">Семья: {familyLabels[fate.familyBackground]}</p>
@@ -172,8 +172,7 @@ function StartScreen({
       >
         РОДИТЬСЯ В ЭТОТ МИР
       </Button>
-      <button type="button" onClick={() => setFate(rollFate())} className="mt-4 cursor-pointer font-mono text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground">Смухлевать / Бросить кубик заново</button>
-      <span className="mt-2 font-mono text-[10px] text-muted-foreground">Родину не выбирают, но если очень страшно — крути еще</span>
+      <span className="mt-4 font-mono text-[10px] text-muted-foreground">Все жизни начинаются в одной точке. Дальше всё зависит от твоих решений.</span>
     </div>
   )
 }
@@ -181,11 +180,11 @@ function StartScreen({
 type Fate = { year: number; birthEra: BirthEraId; cityType: CityType; familyBackground: FamilyBackground; punch: string }
 
 function rollFate(): Fate {
-  const year = weightedPick([1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998], [1, 4, 4, 4, 3, 3, 3, 3, 4, 3, 2, 2, 2, 2])
+  const year = 1985
   const cityType = weightedPick<CityType>(['metropolis', 'industrial', 'provincial'], [30, 45, 25])
   const familyBackground = weightedPick<FamilyBackground>(['working_class', 'intelligentsia', 'single_mother'], [45, 30, 25])
-  const punch = cityType === 'provincial' && year === 1986 ? 'За окном дымит труба котельной, в серванте стоят хрустальные рюмки, а в стране медленно начинается перестройка.' : cityType === 'metropolis' && year === 1993 ? 'Рынок шумит прямо под окнами пятиэтажки, доллар растёт, но здесь хотя бы есть за что зацепиться.' : cityType === 'industrial' ? 'За стеной гудит завод, в подъезде пахнет углём. Здесь работу обещают раньше, чем свободу.' : cityType === 'provincial' ? 'Автобус ходит два раза в день, новости приходят от соседей. До большого мира сначала нужно доехать.' : 'Пятиэтажки тянутся до горизонта. Здесь тесно, дорого и всё же есть куда податься.'
-  return { year, birthEra: year <= 1992 ? 'perestroika' : year <= 1997 ? 'early_nineties' : 'late_nineties', cityType, familyBackground, punch }
+  const punch = cityType === 'industrial' ? 'За стеной гудит завод, в подъезде пахнет углём. Здесь работу обещают раньше, чем свободу.' : cityType === 'provincial' ? 'Автобус ходит два раза в день, новости приходят от соседей. До большого мира сначала нужно доехать.' : 'Пятиэтажки тянутся до горизонта. Здесь тесно, дорого и всё же есть куда податься.'
+  return { year, birthEra: 'perestroika', cityType, familyBackground, punch }
 }
 
 function weightedPick<T>(items: T[], weights: number[]): T {
