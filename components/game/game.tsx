@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import type { BirthEraId, CityType, FamilyBackground, GameChoice, GameEvent, LifeState } from '@/lib/game/types'
 import { createNewLife, resolveChoice, tickYear } from '@/lib/game/engine'
@@ -141,7 +141,9 @@ function StartScreen({
   onStart: (birthEra: BirthEraId, cityType: CityType, birthYear: number, familyBackground: FamilyBackground) => void
   onAudioStart: () => void
 }) {
-  const [fate] = useState(() => rollFate())
+  // Roll on the client only: a random value in the SSR render causes a hydration mismatch.
+  const [fate, setFate] = useState<Fate | null>(null)
+  useEffect(() => setFate(rollFate()), [])
   const cityLabels: Record<CityType, string> = { metropolis: 'Миллионник', industrial: 'Моногород', provincial: 'Глубинка / ПГТ' }
   const familyLabels: Record<FamilyBackground, string> = { working_class: 'работяги', intelligentsia: 'интеллигенция', single_mother: 'мать-одиночка', commercial: 'коммерческая семья' }
   return (
@@ -161,12 +163,13 @@ function StartScreen({
       </p>
       <div className="mt-8 w-full border border-primary/50 bg-primary/5 px-5 py-6 text-left">
         <span className="font-mono text-[10px] uppercase tracking-widest text-primary">Точка отсчёта</span>
-        <h2 className="mt-2 font-sans text-2xl font-bold uppercase text-foreground">{fate.year} год, {cityLabels[fate.cityType]}</h2>
-        <p className="mt-3 font-mono text-sm leading-relaxed text-muted-foreground">{fate.punch}</p>
-        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">Семья: {familyLabels[fate.familyBackground]}</p>
+        <h2 className="mt-2 font-sans text-2xl font-bold uppercase text-foreground">{fate ? `${fate.year} год, ${cityLabels[fate.cityType]}` : '\u00a0'}</h2>
+        <p className="mt-3 font-mono text-sm leading-relaxed text-muted-foreground">{fate?.punch ?? '\u00a0'}</p>
+        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">Семья: {fate ? familyLabels[fate.familyBackground] : ''}</p>
       </div>
       <Button
-        onClick={() => onStart(fate.birthEra, fate.cityType, fate.year, fate.familyBackground)}
+        onClick={() => fate && onStart(fate.birthEra, fate.cityType, fate.year, fate.familyBackground)}
+        disabled={!fate}
         size="lg"
         className="mt-8 w-full font-mono uppercase tracking-[0.2em]"
       >

@@ -3,6 +3,9 @@ import type { Metadata, Viewport } from 'next'
 import { Oswald, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 
+// Static files in public/ are not auto-prefixed with basePath (set at deploy for /zhiza).
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 const oswald = Oswald({ subsets: ['latin', 'cyrillic'], variable: '--font-oswald' })
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin', 'cyrillic'],
@@ -16,19 +19,19 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: `${basePath}/icon-light-32x32.png`,
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: `${basePath}/icon-dark-32x32.png`,
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
+        url: `${basePath}/icon.svg`,
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: `${basePath}/apple-icon.png`,
   },
 }
 
@@ -46,7 +49,7 @@ export default function RootLayout({
     <html lang="ru" className={`dark bg-background ${oswald.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.VERCEL && <Analytics />}
       </body>
     </html>
   )
